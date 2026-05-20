@@ -1,0 +1,59 @@
+/* Layout Optimization CSS */
+
+/* Ensure proper footer positioning */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.min-h-screen {
+    min-height: 100vh;
+    display: flex;
+}
+
+.flex-1.md\:ml-64 {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main.flex-1 {
+    flex: 1;
+    min-height: calc(100vh - 200px); /* Account for navbar and footer */
+    background-color: #ffffff !important;
+}
+
+/* Ensure content area has proper spacing */
+main.flex-1 > div {
+    min-height: inherit;
+}
+
+/* Performance optimizations */
+* {
+    box-sizing: border-box;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Critical CSS for above-the-fold content */
+.navbar {
+    will-change: transform;
+}
+
+.sidebar {
+    will-change: transform;
+}
+
+/* Lazy loading styles */
+.lazy-load {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.lazy-load.loaded {
+    opacity: 1;
+}

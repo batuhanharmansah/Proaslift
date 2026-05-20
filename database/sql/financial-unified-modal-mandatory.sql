@@ -1,0 +1,13 @@
+-- Finansal "Yeni İşlem" modalı (Alacak/Borç + Tek seferlik/Düzenli) için
+-- ZORUNLU VERİTABANI DEĞİŞİKLİĞİ YOK.
+--
+-- Mevcut tablolar kullanılır:
+--   - receivables (tek seferlik alacak)
+--   - payables (tek seferlik borç)
+--   - recurring_payments (düzenli alacak/borç; type=gelir/gider)
+--
+-- Ödeme günü:
+--   - Haftalık: day_of_month 1-7 (Pazartesi=1 ... Pazar=7) mevcut sütunda saklanır.
+--   - Aylık/3 aylık/Yıllık: day_of_month 1-28 (ayın günü).
+--
+-- Bu dosyayı çalıştırmanız gerekmez; bilgi amaçlıdır.
