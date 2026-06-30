@@ -27,15 +27,32 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+    }
 
-        $this->renderable(function (TokenMismatchException $e, $request) {
+    public function render($request, Throwable $e)
+    {
+        if ($e instanceof TokenMismatchException) {
             if ($request->expectsJson()) {
-                return response()->json(['message' => 'Oturum süresi doldu. Lütfen sayfayı yenileyip tekrar deneyin.'], 419);
+                return response()->json([
+                    'message' => 'Oturum süresi doldu. Lütfen sayfayı yenileyip tekrar deneyin.',
+                ], 419);
+            }
+
+            $message = 'Oturum süresi doldu veya sayfa süresi geçti. Lütfen tekrar deneyin.';
+
+            if ($request->is('login') || url()->previous() === route('login')) {
+                return redirect()
+                    ->route('login')
+                    ->withInput($request->except('password', '_token'))
+                    ->with('error', $message);
             }
 
             return redirect()
-                ->route('login')
-                ->with('error', 'Oturum süresi doldu. Lütfen tekrar giriş yapın.');
-        });
+                ->back()
+                ->withInput($request->except('password', '_token'))
+                ->with('error', $message);
+        }
+
+        return parent::render($request, $e);
     }
 }

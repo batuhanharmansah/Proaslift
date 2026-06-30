@@ -10,6 +10,13 @@
             <p class="text-gray-600 mt-1">{{ $building->district }}, {{ $building->city }}</p>
         </div>
         <div class="flex space-x-3">
+            <a href="{{ route('quotations.create', ['building_id' => $building->id]) }}"
+               class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-xl transition duration-200 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14h6m-6-4h6m2 10H7a2 2 0 01-2-2V6a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 10.414V18a2 2 0 01-2 2z"></path>
+                </svg>
+                Teklif Oluştur
+            </a>
             <a href="{{ route('buildings.edit', $building) }}"
                class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-xl transition duration-200 flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

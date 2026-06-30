@@ -20,6 +20,8 @@ use App\Http\Controllers\Employee\DetailedMaintenanceController;
 use App\Http\Controllers\ElevatorLabelController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MaintenanceApprovalController;
+use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\PublicQuotationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -55,6 +57,13 @@ Route::get('/onay/{token}', [MaintenanceApprovalController::class, 'show'])
 Route::post('/onay/{token}', [MaintenanceApprovalController::class, 'submit'])
     ->middleware('throttle:10,1')
     ->name('maintenance-approval.submit');
+
+// Müşteri teklif onayı (public, token ile)
+Route::get('/teklif/onay/{token}', [PublicQuotationController::class, 'show'])
+    ->name('quotations.public.show');
+Route::post('/teklif/onay/{token}', [PublicQuotationController::class, 'respond'])
+    ->middleware('throttle:10,1')
+    ->name('quotations.public.respond');
 
 // Dil değiştirme (EN/TR)
 Route::get('/locale/{locale}', [LocaleController::class, 'set'])->name('locale.set');
@@ -198,6 +207,18 @@ Route::middleware(['auth', 'role:company_admin', 'company.active', 'company.scop
     // Düzenli Ödemeler
     Route::post('finansal/add-recurring-payment', [FinancialController::class, 'addRecurringPayment'])->name('financial.add-recurring-payment');
     Route::post('finansal/process-recurring-payments', [FinancialController::class, 'processRecurringPayments'])->name('financial.process-recurring-payments');
+
+    // Teklif Yönetimi
+    Route::prefix('teklifler')->name('quotations.')->group(function () {
+        Route::get('/', [QuotationController::class, 'index'])->name('index');
+        Route::get('/create', [QuotationController::class, 'create'])->name('create');
+        Route::post('/', [QuotationController::class, 'store'])->name('store');
+        Route::get('/{quotation}', [QuotationController::class, 'show'])->name('show');
+        Route::post('/{quotation}/send', [QuotationController::class, 'markAsSent'])->name('send');
+        Route::post('/{quotation}/cancel', [QuotationController::class, 'cancel'])->name('cancel');
+        Route::post('/{quotation}/convert-to-receivable', [QuotationController::class, 'convertToReceivable'])->name('convert-to-receivable');
+        Route::get('/{quotation}/pdf', [QuotationController::class, 'pdf'])->name('pdf');
+    });
 
     // İş takibi
     Route::get('/is-takibi', function () {
