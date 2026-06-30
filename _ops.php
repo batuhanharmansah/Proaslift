@@ -9,6 +9,9 @@
  *   /_ops.php?key=TOKEN              -> teşhis (PHP sürümü, cache, storage, .env durumu)
  *   /_ops.php?key=TOKEN&do=fix       -> bootstrap/cache temizler, storage klasörlerini oluşturur, izin verir
  *   /_ops.php?key=TOKEN&do=log       -> storage/logs içindeki son hata kayıtlarını gösterir
+ *   /_ops.php?key=TOKEN&do=writeenv&dbpass=VERITABANI_SIFRESI[&force=1]
+ *                                    -> sunucuda .env oluşturur (APP_KEY otomatik üretilir).
+ *                                       Şifre sadece bu isteğin parametresinde gelir, git'e yazılmaz.
  *
  * GÜVENLİK: İşi bitince bu dosya repodan silinip tekrar deploy edilecektir.
  */
@@ -74,6 +77,74 @@ if ($action === 'fix') {
     }
 
     echo "\n--- FIX tamam. Şimdi anasayfayı yenileyin. Hata sürerse ?do=log ile loglara bakın. ---\n";
+    exit;
+}
+
+if ($action === 'writeenv') {
+    echo "--- WRITEENV: .env oluşturuluyor ---\n";
+    $envPath = $base . '/.env';
+
+    if (is_file($envPath) && !isset($_GET['force'])) {
+        echo "[atlandı] .env zaten var. Üzerine yazmak için &force=1 ekleyin.\n";
+        exit;
+    }
+
+    $dbPass = isset($_GET['dbpass']) ? (string) $_GET['dbpass'] : '';
+    if ($dbPass === '') {
+        echo "[HATA] dbpass parametresi zorunlu. Örn: ?key=...&do=writeenv&dbpass=SIFRE\n";
+        exit;
+    }
+
+    $dbHost = isset($_GET['dbhost']) ? (string) $_GET['dbhost'] : 'localhost';
+    $dbPort = isset($_GET['dbport']) ? (string) $_GET['dbport'] : '3306';
+    $dbName = isset($_GET['dbname']) ? (string) $_GET['dbname'] : 'u2759912_proaslift';
+    $dbUser = isset($_GET['dbuser']) ? (string) $_GET['dbuser'] : 'u2759912_Batuhan';
+
+    $appKey = 'base64:' . base64_encode(random_bytes(32));
+
+    $envContent = <<<ENV
+APP_NAME=Proaslift
+APP_ENV=production
+APP_KEY=$appKey
+APP_DEBUG=false
+APP_URL=https://proaslift.com
+
+LOG_CHANNEL=stack
+LOG_LEVEL=error
+
+DB_CONNECTION=mysql
+DB_HOST=$dbHost
+DB_PORT=$dbPort
+DB_DATABASE=$dbName
+DB_USERNAME=$dbUser
+DB_PASSWORD="$dbPass"
+
+BROADCAST_DRIVER=log
+CACHE_DRIVER=file
+FILESYSTEM_DISK=local
+QUEUE_CONNECTION=sync
+SESSION_DRIVER=file
+SESSION_LIFETIME=120
+
+MAIL_MAILER=log
+MAIL_FROM_ADDRESS="no-reply@proaslift.com"
+MAIL_FROM_NAME="\${APP_NAME}"
+
+GOOGLE_GEOCODING_ENABLED=false
+
+ENV;
+
+    $ok = @file_put_contents($envPath, $envContent);
+    if ($ok === false) {
+        echo "[HATA] .env yazılamadı: $envPath\n";
+        exit;
+    }
+    @chmod($envPath, 0640);
+    echo "[yazıldı] $envPath (" . $ok . " bayt)\n";
+    echo "APP_KEY otomatik üretildi.\n";
+    echo "DB_HOST=$dbHost DB_PORT=$dbPort DB_DATABASE=$dbName DB_USERNAME=$dbUser DB_PASSWORD=*** (gizli)\n";
+    echo "\nNot: GOOGLE/MAIL gibi ek ayarları gerekiyorsa sonradan .env'e ekleyin.\n";
+    echo "Şimdi ?do=fix çalıştırıp anasayfayı yenileyin.\n";
     exit;
 }
 
