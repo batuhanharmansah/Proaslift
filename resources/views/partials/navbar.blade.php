@@ -38,18 +38,6 @@
                 </div>
             </div>
 
-            <!-- Dil Seçici (EN/TR) -->
-            <div class="flex items-center gap-1 mr-4">
-                <a href="{{ route('locale.set', 'tr') }}"
-                   class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors {{ app()->getLocale() === 'tr' ? 'bg-primary-500 text-white' : 'text-gray-500 hover:bg-gray-100' }}">
-                    TR
-                </a>
-                <a href="{{ route('locale.set', 'en') }}"
-                   class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors {{ app()->getLocale() === 'en' ? 'bg-primary-500 text-white' : 'text-gray-500 hover:bg-gray-100' }}">
-                    EN
-                </a>
-            </div>
-
             <!-- User Menu -->
             <div class="flex items-center">
                 <div class="relative" x-data="{ open: false }">
