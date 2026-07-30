@@ -60,18 +60,21 @@ class ReportController extends Controller
         $endDate = $request->get('end_date', now()->endOfMonth());
 
         // Gelir-Gider Özeti
-        $income = AccountingEntry::where('type', 'gelir')
+        $income = AccountingEntry::where('company_id', $companyId)
+            ->where('type', 'gelir')
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->sum('amount');
 
-        $expense = AccountingEntry::where('type', 'gider')
+        $expense = AccountingEntry::where('company_id', $companyId)
+            ->where('type', 'gider')
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->sum('amount');
 
         $profit = $income - $expense;
 
         // Aylık Trend
-        $monthlyData = AccountingEntry::whereBetween('transaction_date', [now()->subMonths(11), now()])
+        $monthlyData = AccountingEntry::where('company_id', $companyId)
+            ->whereBetween('transaction_date', [now()->subMonths(11), now()])
             ->selectRaw('DATE_FORMAT(transaction_date, "%Y-%m") as month,
                         SUM(CASE WHEN type = "gelir" THEN amount ELSE 0 END) as income,
                         SUM(CASE WHEN type = "gider" THEN amount ELSE 0 END) as expense')
@@ -80,17 +83,22 @@ class ReportController extends Controller
             ->get();
 
         // Kategori Bazlı Giderler
-        $expenseByCategory = AccountingEntry::where('type', 'gider')
+        $expenseByCategory = AccountingEntry::where('company_id', $companyId)
+            ->where('type', 'gider')
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->selectRaw('category, SUM(amount) as total')
             ->groupBy('category')
             ->orderByDesc('total')
             ->get();
 
-
+        $expenseByCategory->each(function ($row) use ($expense) {
+            $row->total_expense = $row->total;
+            $row->percentage = $expense > 0 ? ($row->total / $expense) * 100 : 0;
+        });
 
         // Bina Bazlı Gelirler
-        $incomeByBuilding = AccountingEntry::where('type', 'gelir')
+        $incomeByBuilding = AccountingEntry::where('company_id', $companyId)
+            ->where('type', 'gelir')
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->whereNotNull('building_id')
             ->with('building')
@@ -98,6 +106,11 @@ class ReportController extends Controller
             ->groupBy('building_id')
             ->orderByDesc('total')
             ->get();
+
+        $incomeByBuilding->each(function ($row) use ($income) {
+            $row->total_income = $row->total;
+            $row->percentage = $income > 0 ? ($row->total / $income) * 100 : 0;
+        });
 
         return view('reports.financial', compact(
             'income', 'expense', 'profit', 'monthlyData',
@@ -280,11 +293,11 @@ class ReportController extends Controller
 
         // Gelir Dağılımı
         $revenueByBuilding = Building::where('company_id', $companyId)
-            ->withSum(['accountingEntries as revenue' => function($query) use ($startDate, $endDate) {
+            ->withSum(['accountingEntries as total_revenue' => function($query) use ($startDate, $endDate) {
                 $query->where('type', 'gelir')
                       ->whereBetween('transaction_date', [$startDate, $endDate]);
             }], 'amount')
-            ->orderByDesc('revenue')
+            ->orderByDesc('total_revenue')
             ->get();
 
         // Arıza Analizi

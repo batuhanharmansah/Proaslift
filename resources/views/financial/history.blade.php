@@ -74,17 +74,13 @@
                             {{ $transaction->created_at->format('d.m.Y H:i') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            @if($transaction->transaction_type === 'gelir')
+                            @if($transaction->type === 'gelir')
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                     Gelir
                                 </span>
-                            @elseif($transaction->transaction_type === 'gider')
+                            @else
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                    Gider
-                                </span>
-                            @elseif($transaction->transaction_type === 'transfer')
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    Transfer
+                                    {{ $transaction->type_label ?? 'Gider' }}
                                 </span>
                             @endif
                         </td>
@@ -92,31 +88,24 @@
                             {{ $transaction->description }}
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-900">
-                            @if($transaction->transaction_type === 'gelir')
-                                <span class="text-green-600">→ {{ $transaction->toAccount->name ?? 'N/A' }}</span>
-                            @elseif($transaction->transaction_type === 'gider')
-                                <span class="text-red-600">{{ $transaction->fromAccount->name ?? 'N/A' }} →</span>
-                            @elseif($transaction->transaction_type === 'transfer')
-                                <div>
-                                    <div class="text-red-600">{{ $transaction->fromAccount->name ?? 'N/A' }} →</div>
-                                    <div class="text-green-600">→ {{ $transaction->toAccount->name ?? 'N/A' }}</div>
-                                </div>
+                            @if($transaction->type === 'gelir')
+                                <span class="text-green-600">→ {{ $transaction->accountType->name ?? 'N/A' }}</span>
+                            @else
+                                <span class="text-red-600">{{ $transaction->accountType->name ?? 'N/A' }} →</span>
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            @if($transaction->transaction_type === 'gelir')
+                            @if($transaction->type === 'gelir')
                                 <span class="text-green-600">+₺{{ number_format($transaction->total_amount, 2) }}</span>
-                            @elseif($transaction->transaction_type === 'gider')
-                                <span class="text-red-600">-₺{{ number_format($transaction->total_amount, 2) }}</span>
                             @else
-                                <span class="text-blue-600">₺{{ number_format($transaction->total_amount, 2) }}</span>
+                                <span class="text-red-600">-₺{{ number_format($transaction->total_amount, 2) }}</span>
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {{ $transaction->building->name ?? '-' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {{ $transaction->createdByUser->name ?? 'Sistem' }}
+                            {{ $transaction->createdBy->name ?? 'Sistem' }}
                         </td>
                     </tr>
                     @empty

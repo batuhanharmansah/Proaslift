@@ -238,6 +238,10 @@ class QuotationController extends Controller
             return back()->with('success', 'Bu teklif daha önce alacağa dönüştürülmüş.');
         }
 
+        if (!$quotation->building_id) {
+            return back()->with('error', 'Bu teklifte bina seçilmemiş. Alacağa dönüştürmeden önce lütfen tekliften bir bina ilişkilendirin.');
+        }
+
         $receivable = Receivable::create([
             'company_id' => $quotation->company_id,
             'building_id' => $quotation->building_id,

@@ -79,6 +79,7 @@ class ProductController extends Controller
         if (!$product->exists) {
             abort(404, 'Ürün bulunamadı.');
         }
+        abort_if($product->company_id !== auth()->user()->company_id, 403);
 
         return view('products.show', compact('product'));
     }
@@ -89,6 +90,7 @@ class ProductController extends Controller
         if (!$product->exists) {
             abort(404, 'Ürün bulunamadı.');
         }
+        abort_if($product->company_id !== auth()->user()->company_id, 403);
 
         return view('products.edit', compact('product'));
     }
@@ -99,6 +101,7 @@ class ProductController extends Controller
         if (!$product->exists) {
             abort(404, 'Ürün bulunamadı.');
         }
+        abort_if($product->company_id !== auth()->user()->company_id, 403);
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
@@ -119,7 +122,7 @@ class ProductController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $product->update($request->all());
+        $product->update($request->except('company_id'));
 
         return redirect()->route('products.index')->with('success', 'Ürün bilgileri güncellendi.');
     }
@@ -130,6 +133,7 @@ class ProductController extends Controller
         if (!$product->exists) {
             abort(404, 'Ürün bulunamadı.');
         }
+        abort_if($product->company_id !== auth()->user()->company_id, 403);
 
         $product->delete();
 

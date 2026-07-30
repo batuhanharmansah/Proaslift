@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Validation\Rule;
 
 class FinancialController extends Controller
 {
@@ -206,12 +207,14 @@ class FinancialController extends Controller
     {
         \Log::info('Quick Transaction Debug - Request Data:', $request->all());
 
+        $companyId = auth()->user()->company_id;
+
         $validator = Validator::make($request->all(), [
             'type' => 'required|in:gelir,gider,transfer',
             'amount' => 'required|numeric|min:0.01',
             'description' => 'required|string|max:255',
-            'account_id' => 'required|exists:account_types,id',
-            'target_account_id' => 'nullable|exists:account_types,id',
+            'account_id' => ['required', Rule::exists('account_types', 'id')->where('company_id', $companyId)],
+            'target_account_id' => ['nullable', Rule::exists('account_types', 'id')->where('company_id', $companyId)],
             'building_id' => 'nullable|exists:buildings,id',
         ]);
 
@@ -434,7 +437,7 @@ class FinancialController extends Controller
         $validator = Validator::make($request->all(), [
             'receivable_id' => 'required|exists:receivables,id',
             'amount' => 'required|numeric|min:0.01',
-            'account_id' => 'required|exists:account_types,id',
+            'account_id' => ['required', Rule::exists('account_types', 'id')->where('company_id', auth()->user()->company_id)],
         ]);
 
         if ($validator->fails()) {
@@ -554,7 +557,7 @@ class FinancialController extends Controller
         $validator = Validator::make($request->all(), [
             'payable_id' => 'required|exists:payables,id',
             'amount' => 'required|numeric|min:0.01',
-            'account_id' => 'required|exists:account_types,id',
+            'account_id' => ['required', Rule::exists('account_types', 'id')->where('company_id', auth()->user()->company_id)],
         ]);
 
         if ($validator->fails()) {
@@ -1109,45 +1112,85 @@ class FinancialController extends Controller
     }
 
     /**
+     * Kategori kodunu Türkçe etikete çevirir (rapor sayfası için).
+     */
+    private function categoryLabel(?string $category): string
+    {
+        $labels = [
+            'bina_geliri' => 'Bina Geliri',
+            'elektrik' => 'Elektrik',
+            'su' => 'Su',
+            'dogalgaz' => 'Doğalgaz',
+            'internet' => 'İnternet',
+            'telefon' => 'Telefon',
+            'maas' => 'Maaş',
+            'personel_maasi' => 'Personel Maaşı',
+            'vergi' => 'Vergi',
+            'sigorta' => 'Sigorta',
+            'kira' => 'Kira',
+            'genel_gider' => 'Genel Gider',
+            'genel' => 'Genel',
+            'diger' => 'Diğer',
+        ];
+
+        return $labels[$category] ?? ($category ?: 'Diğer');
+    }
+
+    /**
      * Finansal rapor sayfası
      */
     public function report(Request $request)
     {
         $companyId = auth()->user()->company_id;
 
-        // Tarih aralığı
-        $startDate = $request->get('start_date', now()->startOfMonth());
-        $endDate = $request->get('end_date', now()->endOfMonth());
+        $currentStart = now('Europe/Istanbul')->startOfMonth();
+        $currentEnd = now('Europe/Istanbul')->endOfMonth();
+        $lastStart = now('Europe/Istanbul')->subMonth()->startOfMonth();
+        $lastEnd = now('Europe/Istanbul')->subMonth()->endOfMonth();
 
-        // Gelir-gider istatistikleri
-        $totalIncome = FinancialTransaction::where('company_id', $companyId)
-            ->where('transaction_type', 'gelir')
-            ->whereBetween('transaction_date', [$startDate, $endDate])
-            ->sum('total_amount');
+        $sumFor = function ($start, $end, $type) use ($companyId) {
+            return (float) AccountingEntry::where('company_id', $companyId)
+                ->where('type', $type)
+                ->whereBetween('transaction_date', [$start, $end])
+                ->sum('total_amount');
+        };
 
-        $totalExpense = FinancialTransaction::where('company_id', $companyId)
-            ->where('transaction_type', 'gider')
-            ->whereBetween('transaction_date', [$startDate, $endDate])
-            ->sum('total_amount');
+        $currentIncome = $sumFor($currentStart, $currentEnd, 'gelir');
+        $currentExpense = $sumFor($currentStart, $currentEnd, 'gider');
+        $lastIncome = $sumFor($lastStart, $lastEnd, 'gelir');
+        $lastExpense = $sumFor($lastStart, $lastEnd, 'gider');
 
-        // Kategori bazlı analiz
-        $categoryStats = FinancialTransaction::where('company_id', $companyId)
-            ->whereBetween('transaction_date', [$startDate, $endDate])
-            ->selectRaw('transaction_type, category, SUM(total_amount) as total')
-            ->groupBy('transaction_type', 'category')
+        $monthlyStats = [
+            'current' => [
+                'income' => $currentIncome,
+                'expense' => $currentExpense,
+                'profit' => $currentIncome - $currentExpense,
+            ],
+            'last' => [
+                'income' => $lastIncome,
+                'expense' => $lastExpense,
+                'profit' => $lastIncome - $lastExpense,
+            ],
+        ];
+
+        $accounts = AccountType::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('name')
             ->get();
 
-        // Aylık trend
-        $monthlyTrend = FinancialTransaction::where('company_id', $companyId)
-            ->whereBetween('transaction_date', [$startDate, $endDate])
-            ->selectRaw('YEAR(transaction_date) as year, MONTH(transaction_date) as month, transaction_type, SUM(total_amount) as total')
-            ->groupBy('year', 'month', 'transaction_type')
-            ->orderBy('year')
-            ->orderBy('month')
-            ->get();
+        // Bu ay kategori bazlı analiz
+        $categoryStats = AccountingEntry::where('company_id', $companyId)
+            ->whereBetween('transaction_date', [$currentStart, $currentEnd])
+            ->selectRaw('type as transaction_type, category, SUM(total_amount) as total')
+            ->groupBy('type', 'category')
+            ->get()
+            ->map(function ($row) {
+                $row->category_label = $this->categoryLabel($row->category);
+                return $row;
+            });
 
         return view('financial.report', compact(
-            'totalIncome', 'totalExpense', 'categoryStats', 'monthlyTrend', 'startDate', 'endDate'
+            'monthlyStats', 'accounts', 'categoryStats'
         ));
     }
 

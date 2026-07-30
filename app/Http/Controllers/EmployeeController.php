@@ -115,6 +115,8 @@ class EmployeeController extends Controller
      */
     public function show(Employee $employee)
     {
+        abort_if($employee->company_id !== auth()->user()->company_id, 403);
+
         return view('employees.show', compact('employee'));
     }
 
@@ -123,6 +125,8 @@ class EmployeeController extends Controller
      */
     public function edit(Employee $employee)
     {
+        abort_if($employee->company_id !== auth()->user()->company_id, 403);
+
         return view('employees.edit', compact('employee'));
     }
 
@@ -131,11 +135,18 @@ class EmployeeController extends Controller
      */
     public function update(Request $request, Employee $employee)
     {
+        abort_if($employee->company_id !== auth()->user()->company_id, 403);
+
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
-            'email' => 'required|email|unique:employees,email,' . $employee->id,
+            'email' => [
+                'required',
+                'email',
+                'unique:employees,email,' . $employee->id,
+                'unique:users,email,' . optional($employee->user)->id,
+            ],
             'address' => 'required|string',
             'position' => 'required|in:teknisyen,usta,muhendis,yonetici,muhasebe',
             'salary' => 'required|numeric|min:0',
@@ -161,6 +172,8 @@ class EmployeeController extends Controller
      */
     public function destroy(Employee $employee)
     {
+        abort_if($employee->company_id !== auth()->user()->company_id, 403);
+
         $employee->delete();
 
         return redirect()->route('employees.index')
@@ -176,6 +189,7 @@ class EmployeeController extends Controller
         if (!$employee->exists) {
             abort(404, 'Çalışan bulunamadı.');
         }
+        abort_if($employee->company_id !== auth()->user()->company_id, 403);
 
         return view('employees.profile', compact('employee'));
     }
@@ -189,12 +203,18 @@ class EmployeeController extends Controller
         if (!$employee->exists) {
             abort(404, 'Çalışan bulunamadı.');
         }
+        abort_if($employee->company_id !== auth()->user()->company_id, 403);
 
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
-            'email' => 'required|email|unique:employees,email,' . $employee->id,
+            'email' => [
+                'required',
+                'email',
+                'unique:employees,email,' . $employee->id,
+                'unique:users,email,' . optional($employee->user)->id,
+            ],
             'address' => 'required|string',
             'position' => 'required|in:teknisyen,usta,muhendis,yonetici,muhasebe',
             'salary' => 'required|numeric|min:0',

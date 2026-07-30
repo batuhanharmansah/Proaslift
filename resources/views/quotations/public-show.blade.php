@@ -72,7 +72,11 @@
                 </div>
             </div>
 
-            @if(in_array($quotation->status, ['accepted', 'rejected', 'expired', 'converted', 'cancelled'], true))
+            @if($quotation->status === 'draft')
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center font-semibold text-gray-700">
+                    Bu teklif henüz hazırlanma aşamasında. Onaylamak için lütfen size gönderilen güncel bağlantıyı bekleyin.
+                </div>
+            @elseif(in_array($quotation->status, ['accepted', 'rejected', 'expired', 'converted', 'cancelled'], true))
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center font-semibold text-gray-700">
                     Bu teklifin güncel durumu: {{ $quotation->status_label }}
                 </div>

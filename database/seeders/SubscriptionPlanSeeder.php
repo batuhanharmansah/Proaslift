@@ -33,7 +33,7 @@ class SubscriptionPlanSeeder extends Seeder
             ],
             [
                 'name' => 'Profesyonel Paket',
-                'slug' => 'professional',
+                'slug' => 'orta',
                 'price' => 599.00,
                 'max_buildings' => 15,
                 'max_employees' => 10,
@@ -53,7 +53,7 @@ class SubscriptionPlanSeeder extends Seeder
             ],
             [
                 'name' => 'Kurumsal Paket',
-                'slug' => 'enterprise',
+                'slug' => 'super',
                 'price' => 999.00,
                 'max_buildings' => -1, // Sınırsız
                 'max_employees' => -1, // Sınırsız

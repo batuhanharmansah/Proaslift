@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('employee.layouts.app')
 
 @section('title', 'Detaylı Bakım Formu')
 

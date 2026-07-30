@@ -111,7 +111,7 @@
             <!-- Aylık Ödemeler -->
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold text-gray-900">2025 Yılı Aylık Ödemeler</h2>
+                    <h2 class="text-xl font-semibold text-gray-900">{{ now()->year }} Yılı Aylık Ödemeler</h2>
                     <div class="text-sm text-gray-600">
                         <span class="font-medium">{{ $financialSummary['months_paid'] }}/12</span> ay ödendi
                     </div>
@@ -389,13 +389,6 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
                         Bakım Planla
-                    </a>
-                    <a href="#"
-                       class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-xl transition duration-200 flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        Rapor Oluştur
                     </a>
                 </div>
             </div>

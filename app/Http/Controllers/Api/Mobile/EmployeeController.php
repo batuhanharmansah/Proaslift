@@ -66,8 +66,10 @@ class EmployeeController extends Controller
 
             $employees = $query->paginate(20);
 
+            $canSeeSalary = $request->user()->isCompanyAdmin();
+
             // Transform data for mobile
-            $employees->getCollection()->transform(function ($employee) {
+            $employees->getCollection()->transform(function ($employee) use ($canSeeSalary) {
                 // Get current month performance
                 $currentMonthTasks = MaintenanceSchedule::where('assigned_employee_id', $employee->id)
                     ->whereMonth('scheduled_date', now()->month)
@@ -90,7 +92,7 @@ class EmployeeController extends Controller
                     'address' => $employee->address,
                     'position' => $employee->position,
                     'position_label' => $employee->position_label,
-                    'salary' => (float) $employee->salary,
+                    'salary' => $canSeeSalary ? (float) $employee->salary : null,
                     'hire_date' => $employee->hire_date,
                     'is_active' => $employee->is_active,
                     'notes' => $employee->notes,
@@ -150,6 +152,8 @@ class EmployeeController extends Controller
 
             $employee = Employee::where('company_id', $companyId)->findOrFail($id);
 
+            $canSeeSalary = $request->user()->isCompanyAdmin() || $employee->user_id === $request->user()->id;
+
             // Get detailed performance metrics
             $performanceMetrics = $this->getEmployeePerformance($employee->id);
 
@@ -170,7 +174,7 @@ class EmployeeController extends Controller
                 'address' => $employee->address,
                 'position' => $employee->position,
                 'position_label' => $employee->position_label,
-                'salary' => (float) $employee->salary,
+                'salary' => $canSeeSalary ? (float) $employee->salary : null,
                 'hire_date' => $employee->hire_date,
                 'is_active' => $employee->is_active,
                 'notes' => $employee->notes,
@@ -355,6 +359,13 @@ class EmployeeController extends Controller
             }
 
             $employee = Employee::where('company_id', $companyId)->findOrFail($id);
+
+            if (!$request->user()->isCompanyAdmin()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bu personeli güncelleme yetkiniz yok',
+                ], 403);
+            }
 
             $validator = Validator::make($request->all(), [
                 'first_name' => 'required|string|max:255',

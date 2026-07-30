@@ -32,6 +32,7 @@ class CompanyController extends Controller
             'email' => 'required|email|max:255',
             'phone' => 'required|string|max:20',
             'address' => 'required|string|max:500',
+            'tax_number' => 'nullable|string|max:50',
             'notes' => 'nullable|string|max:1000',
         ]);
 
@@ -39,7 +40,7 @@ class CompanyController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $company->update($request->only(['name', 'email', 'phone', 'address', 'notes']));
+        $company->update($request->only(['name', 'email', 'phone', 'address', 'tax_number', 'notes']));
 
         return redirect()->route('company.profile')->with('success', 'Firma bilgileri başarıyla güncellendi.');
     }

@@ -39,7 +39,7 @@ class PublicQuotationController extends Controller
 
         $quotation = Quotation::where('public_token', $token)->firstOrFail();
 
-        if (in_array($quotation->status, ['accepted', 'rejected', 'expired', 'converted', 'cancelled'], true)) {
+        if (!in_array($quotation->status, ['sent', 'viewed'], true)) {
             return back()->with('error', 'Bu teklif için işlem yapılamaz.');
         }
 

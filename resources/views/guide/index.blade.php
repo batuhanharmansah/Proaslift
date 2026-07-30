@@ -90,6 +90,68 @@
             </div>
         </div>
 
+        <!-- Konum Haritası -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8" x-show="isVisible('konum')">
+            <div class="flex items-center mb-6">
+                <div class="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center mr-4">
+                    <svg class="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Konum Haritası</h2>
+                    <p class="text-gray-600">Saha ekibinin canlı konumunu ve günün iş programını harita üzerinde takip edin</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">🗺️ Harita Görünümü</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Canlı Konum:</strong> Personelin mobil uygulama üzerinden paylaştığı anlık konum</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Günün İşleri:</strong> Bugüne planlanan bakım ve arıza işlerinin bina konumları</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>İşaretleyiciler:</strong> Haritadaki bina/personel ikonlarına tıklayarak detaya gitme</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Personel Filtreleme:</strong> Haritada gösterilecek çalışanları seçme</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">📍 Kullanım İpuçları</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Konum İzni:</strong> Personelin mobil uygulamada konum paylaşımını açık tutması gerekir</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Otomatik Yenileme:</strong> Konumlar belirli aralıklarla otomatik güncellenir</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Saha Takibi:</strong> Ekibin binaya olan uzaklığını görsel olarak değerlendirme</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Aktif Personel:</strong> Sadece o an çalışan personeli haritada listeleme</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
         <!-- Personel Yönetimi -->
         <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8" x-show="isVisible('personel')">
             <div class="flex items-center mb-6">
@@ -278,6 +340,67 @@
             </div>
         </div>
 
+        <!-- Asansör Etiketleme -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8" x-show="isVisible('etiket')">
+            <div class="flex items-center mb-6">
+                <div class="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center mr-4">
+                    <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Asansör Etiketleme</h2>
+                    <p class="text-gray-600">Asansörlerin etiket/mühür durumunu ve renk koduna göre süre takibini yönetin</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">🏷️ Etiket Sistemi</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Renk Kodları:</strong> Yeşil (uygun), Mavi ve Sarı (izlemede/aşamalı), Kırmızı (uygunsuz/acil)</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Etiket Bilgileri:</strong> Asansör, etiketleme tarihi, geçerlilik süresi, mühür/etiket no</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Bina/Asansör Eşleştirme:</strong> Her asansör için ayrı etiketleme kaydı tutma</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Durum Görünümü:</strong> Bina/asansör listesinde güncel etiket rengini görme</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">⏱️ Süre Takibi</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Süre Uyarıları:</strong> Geçerlilik süresi dolmak üzere olan etiketlerin takibi</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Yenileme:</strong> Süresi dolan asansör için yeni etiketleme kaydı oluşturma</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Geçmiş Kayıtlar:</strong> Önceki etiketleme/mühürleme işlemlerinin geçmişi</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Riskli Asansörler:</strong> Kırmızı etiketli asansörlerin listesini görüntüleme</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
         <!-- Finansal Yönetim -->
         <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8" x-show="isVisible('finansal')">
             <div class="flex items-center mb-6">
@@ -347,6 +470,67 @@
             </div>
         </div>
 
+        <!-- Teklifler -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8" x-show="isVisible('teklif')">
+            <div class="flex items-center mb-6">
+                <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mr-4">
+                    <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Teklifler</h2>
+                    <p class="text-gray-600">Müşterilere teklif oluşturun, gönderin ve onaylananları faturaya dönüştürün</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">📄 Teklif Oluşturma</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Müşteri/Bina Seçimi:</strong> Teklifin kime/hangi binaya ait olduğunu belirleme</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Kalem Ekleme:</strong> Ürün/hizmet, miktar ve birim fiyat girme</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Toplam Hesaplama:</strong> Ara toplam, KDV ve genel toplamın otomatik hesaplanması</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Geçerlilik Tarihi:</strong> Teklifin son geçerlilik tarihini belirleme</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">📤 Gönderim ve Takip</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>PDF Olarak İndirme:</strong> Teklifi PDF çıktısı alarak paylaşma</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Paylaşım Linki:</strong> Müşteriye link ile gönderip online görüntülemesini sağlama</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Durum Takibi:</strong> Taslak, Gönderildi, Kabul Edildi, Reddedildi</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                            <span><strong>Faturaya Dönüştürme:</strong> Kabul edilen teklifi tek adımda faturaya çevirme</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
         <!-- Raporlar -->
         <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8" x-show="isVisible('rapor')">
             <div class="flex items-center mb-6">
@@ -385,15 +569,11 @@
                 </div>
 
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">💾 Export Özellikleri</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">💾 Görüntüleme Özellikleri</h3>
                     <ul class="space-y-3 text-gray-700">
                         <li class="flex items-start">
                             <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                            <span><strong>Excel Export:</strong> Verileri Excel formatında indirme</span>
-                        </li>
-                        <li class="flex items-start">
-                            <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                            <span><strong>PDF Export:</strong> Raporları PDF formatında indirme</span>
+                            <span><strong>Ekranda İnceleme:</strong> Raporları filtreleyerek ekran üzerinde detaylı inceleyebilirsiniz</span>
                         </li>
                         <li class="flex items-start">
                             <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>

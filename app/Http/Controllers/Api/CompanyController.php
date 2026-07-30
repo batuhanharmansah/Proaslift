@@ -109,6 +109,10 @@ class CompanyController extends Controller
 
     public function updateProfile(Request $request)
     {
+        if (!Auth::user()->isCompanyAdmin()) {
+            return response()->json(['message' => 'Bu işlem için yetkiniz yok'], 403);
+        }
+
         $company = Company::findOrFail(Auth::user()->company_id);
 
         $request->validate([

@@ -18,9 +18,9 @@ class Kernel extends ConsoleKernel
                  ->withoutOverlapping()
                  ->runInBackground();
 
-        // Haftalık özet raporu (Pazartesi 08:00)
-        $schedule->command('elevator:weekly-report')
-                 ->weeklyOn(1, '08:00')
+        // Düzenli ödemeler (bina aylık ücretleri) için otomatik alacak oluşturma (her gün 00:15'te)
+        $schedule->command('recurring-payments:process')
+                 ->dailyAt('00:15')
                  ->withoutOverlapping()
                  ->runInBackground();
     }

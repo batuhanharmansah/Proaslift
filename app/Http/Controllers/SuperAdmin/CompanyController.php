@@ -233,11 +233,10 @@ class CompanyController extends Controller
 
     public function details(Company $company)
     {
-        $company->load(['users.userRoles.role', 'buildings', 'employees', 'payments' => function($q) {
-            $q->latest();
-        }]);
-
-        return view('super-admin.companies.details', compact('company'));
+        // Ayrı bir "details" görünümü ve Company::payments() ilişkisi hiç mevcut değildi
+        // (payments tablosu şu an kullanılmıyor), bu yüzden mevcut ve çalışan
+        // companies.show sayfasına yönlendiriyoruz.
+        return redirect()->route('super-admin.companies.show', $company);
     }
 
     /**

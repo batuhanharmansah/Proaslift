@@ -90,22 +90,23 @@
                        class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
             </div>
             <div>
-                <label for="subscription_status" class="block text-sm font-medium text-gray-700 mb-2">Abonelik Durumu</label>
-                <select id="subscription_status" name="subscription_status"
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Durum</label>
+                <select id="status" name="status"
                         class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                     <option value="">Tümü</option>
-                    <option value="active" {{ request('subscription_status') === 'active' ? 'selected' : '' }}>Aktif</option>
-                    <option value="expired" {{ request('subscription_status') === 'expired' ? 'selected' : '' }}>Süresi Dolmuş</option>
-                    <option value="cancelled" {{ request('subscription_status') === 'cancelled' ? 'selected' : '' }}>İptal Edilmiş</option>
+                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif</option>
+                    <option value="suspended" {{ request('status') === 'suspended' ? 'selected' : '' }}>Askıda</option>
+                    <option value="expired" {{ request('status') === 'expired' ? 'selected' : '' }}>Süresi Dolmuş</option>
                 </select>
             </div>
             <div>
-                <label for="is_active" class="block text-sm font-medium text-gray-700 mb-2">Sistem Durumu</label>
-                <select id="is_active" name="is_active"
+                <label for="plan" class="block text-sm font-medium text-gray-700 mb-2">Abonelik Paketi</label>
+                <select id="plan" name="plan"
                         class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                     <option value="">Tümü</option>
-                    <option value="1" {{ request('is_active') === '1' ? 'selected' : '' }}>Aktif</option>
-                    <option value="0" {{ request('is_active') === '0' ? 'selected' : '' }}>Askıda</option>
+                    @foreach($subscriptionPlans as $plan)
+                        <option value="{{ $plan->slug }}" {{ request('plan') === $plan->slug ? 'selected' : '' }}>{{ $plan->name }}</option>
+                    @endforeach
                 </select>
             </div>
             <div class="flex items-end">

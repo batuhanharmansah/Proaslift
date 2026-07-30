@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use App\Models\DetailedMaintenanceReport;
+use App\Models\MaintenanceReport;
 use App\Models\MaintenanceSchedule;
 use App\Models\Building;
 use App\Models\Employee;
+use App\Services\MaintenanceApprovalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,12 +21,26 @@ class DetailedMaintenanceController extends Controller
     }
 
     /**
+     * Oturumdaki kullanıcının Employee kaydını bulur (user_id ilişkisi üzerinden).
+     */
+    private function getEmployeeId(): int
+    {
+        $employee = Employee::where('user_id', auth()->id())->first();
+
+        if (!$employee) {
+            abort(403, 'Personel kaydınız bulunamadı. Lütfen yöneticinizle iletişime geçin.');
+        }
+
+        return $employee->id;
+    }
+
+    /**
      * Detaylı bakım formu göster
      */
     public function show($scheduleId)
     {
         $schedule = MaintenanceSchedule::with(['building', 'assignedEmployee'])
-            ->where('assigned_employee_id', auth()->id())
+            ->where('assigned_employee_id', $this->getEmployeeId())
             ->findOrFail($scheduleId);
 
         // Eğer zaten detaylı rapor varsa göster
@@ -42,7 +58,9 @@ class DetailedMaintenanceController extends Controller
      */
     public function store(Request $request, $scheduleId)
     {
-        $schedule = MaintenanceSchedule::where('assigned_employee_id', auth()->id())
+        $employeeId = $this->getEmployeeId();
+
+        $schedule = MaintenanceSchedule::where('assigned_employee_id', $employeeId)
             ->findOrFail($scheduleId);
 
         $validated = $request->validate([
@@ -82,15 +100,9 @@ class DetailedMaintenanceController extends Controller
             'general_notes' => 'nullable|string',
         ]);
 
-        // Employee kaydını bul
-        $employee = Employee::where('user_id', auth()->id())->first();
-        if (!$employee) {
-            return back()->withErrors(['error' => 'Personel kaydınız bulunamadı.']);
-        }
-
         $report = DetailedMaintenanceReport::create([
             'maintenance_schedule_id' => $scheduleId,
-            'employee_id' => $employee->id,
+            'employee_id' => $employeeId,
             'building_id' => $schedule->building_id,
             'building_id_number' => $validated['building_id_number'] ?? null,
             'maintenance_date' => $validated['maintenance_date'],
@@ -117,14 +129,50 @@ class DetailedMaintenanceController extends Controller
             'general_notes' => $validated['general_notes'] ?? null,
         ]);
 
-        // Maintenance schedule'ı tamamlandı olarak işaretle
+        // Maintenance schedule'ı güncelle
         $schedule->update([
-            'status' => 'tamamlandi',
+            'status' => $validated['completion_status'] === 'tamamlandi' ? 'tamamlandi' : 'baslandi',
             'notes' => 'Detaylı bakım raporu oluşturuldu.'
         ]);
 
+        $flashMessage = 'Detaylı bakım raporu başarıyla oluşturuldu.';
+
+        // Diğer bakım tamamlama akışlarıyla (rapor + onay SMS zinciri) tutarlılık için:
+        // tamamlandı olarak işaretlenmişse, henüz bir MaintenanceReport yoksa bir tane oluştur
+        // ve bina yöneticisine onay SMS'i gönder.
+        if ($validated['completion_status'] === 'tamamlandi' && !$schedule->maintenanceReport) {
+            $problems = collect($validated['faulty_parts'] ?? [])->filter()->implode(', ');
+            $recommendations = collect($validated['replaced_parts'] ?? [])->filter()->implode(', ');
+
+            $maintenanceReport = MaintenanceReport::create([
+                'company_id' => $schedule->company_id,
+                'building_id' => $schedule->building_id,
+                'maintenance_schedule_id' => $schedule->id,
+                'employee_id' => $employeeId,
+                'title' => 'Detaylı Bakım Raporu - ' . $schedule->building->name,
+                'start_time' => $report->entry_time ?? $validated['maintenance_date'],
+                'end_time' => $report->exit_time,
+                'work_description' => $validated['general_notes'] ?: ($validated['description_warnings'] ?: 'Detaylı periyodik bakım kontrol formu dolduruldu.'),
+                'used_products' => null,
+                'total_cost' => 0,
+                'problems_found' => $problems ?: null,
+                'recommendations' => $recommendations ?: null,
+                'completion_status' => 'tamamlandi',
+                'customer_signature' => $report->building_authority_signature,
+                'customer_name' => $validated['building_authority_name'] ?? null,
+                'customer_notes' => $validated['building_authority_notes'] ?? null,
+            ]);
+
+            $smsResult = app(MaintenanceApprovalService::class)
+                ->initiateApprovalFlow($maintenanceReport->fresh(['building']));
+
+            if ($smsResult['sent'] ?? false) {
+                $flashMessage .= ' Bina yöneticisine onay SMS\'i gönderildi.';
+            }
+        }
+
         return redirect()->route('employee.maintenance.detailed-report', $scheduleId)
-            ->with('success', 'Detaylı bakım raporu başarıyla oluşturuldu.');
+            ->with('success', $flashMessage);
     }
 
     /**
@@ -132,7 +180,7 @@ class DetailedMaintenanceController extends Controller
      */
     public function update(Request $request, $scheduleId)
     {
-        $schedule = MaintenanceSchedule::where('assigned_employee_id', auth()->id())
+        $schedule = MaintenanceSchedule::where('assigned_employee_id', $this->getEmployeeId())
             ->findOrFail($scheduleId);
 
         $report = DetailedMaintenanceReport::where('maintenance_schedule_id', $scheduleId)->firstOrFail();

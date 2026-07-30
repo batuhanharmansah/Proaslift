@@ -191,17 +191,39 @@ class BuildingController extends Controller
         }
 
         try {
-            $companyId = $request->user()->company_id;
+            $user = $request->user();
+            $companyId = $user->company_id;
 
-            $building = Building::create(array_merge($request->only([
-                'name', 'address', 'district', 'city', 'floor_count', 'elevator_count',
-                'elevator_type', 'contract_type', 'monthly_fee', 'contract_start_date', 'contract_end_date',
-                'elevator_code', 'capacity_kg', 'capacity_person',
-                'responsible_person', 'responsible_phone', 'responsible_email',
-            ]), [
-                'company_id' => $companyId,
-                'operational_status' => 'aktif',
-            ]));
+            if (!$companyId) {
+                $employee = $user->employee ?? Employee::where('email', $user->email)->first();
+                $companyId = $employee?->company_id;
+            }
+
+            if (!$companyId) {
+                return response()->json(['success' => false, 'message' => 'Firma bilgisi bulunamadı'], 403);
+            }
+
+            $building = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $companyId) {
+                $building = Building::create(array_merge($request->only([
+                    'name', 'address', 'district', 'city', 'floor_count', 'elevator_count',
+                    'elevator_type', 'contract_type', 'monthly_fee', 'contract_start_date', 'contract_end_date',
+                    'elevator_code', 'capacity_kg', 'capacity_person',
+                    'responsible_person', 'responsible_phone', 'responsible_email',
+                ]), [
+                    'company_id' => $companyId,
+                    'operational_status' => 'aktif',
+                ]));
+
+                app(\App\Services\BuildingFinancialService::class)->createInitialRecords(
+                    $building,
+                    $request->contract_start_date,
+                    $request->contract_end_date,
+                    $companyId,
+                    $request->user()->id
+                );
+
+                return $building;
+            });
 
             return response()->json([
                 'success' => true,

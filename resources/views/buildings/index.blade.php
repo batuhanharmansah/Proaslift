@@ -24,15 +24,6 @@
         </div>
     @endif
 
-    <!-- DEBUG: Bina sayısı ve kullanıcı bilgisi -->
-    <div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg mb-6">
-        <strong>DEBUG:</strong>
-        Toplam Bina: {{ $buildings->total() }} |
-        Kullanıcı ID: {{ auth()->id() }} |
-        Company ID: {{ auth()->user()->company_id ?? 'NULL' }} |
-        Sayfa: {{ $buildings->currentPage() }} / {{ $buildings->lastPage() }}
-    </div>
-
     <!-- Live Search Bar -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
         <div class="flex items-center space-x-4">

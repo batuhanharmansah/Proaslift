@@ -21,15 +21,7 @@ class BuildingController extends Controller
 {
     public function index(Request $request)
     {
-        // Debug: Cache'i tamamen devre dışı bırak
         $companyId = auth()->user()->company_id;
-
-        // Debug bilgisi
-        \Log::info('Building Index Debug', [
-            'user_id' => auth()->id(),
-            'company_id' => $companyId,
-            'query_string' => $request->getQueryString()
-        ]);
 
         $query = Building::with(['primaryContact'])->where('company_id', $companyId);
 
@@ -48,15 +40,7 @@ class BuildingController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Debug: Query'yi çalıştır ve logla
         $buildings = $query->orderBy('name', 'asc')->paginate(15);
-
-        \Log::info('Building Query Result', [
-            'total_buildings' => $buildings->total(),
-            'current_page_count' => $buildings->count(),
-            'sql' => $query->toSql(),
-            'bindings' => $query->getBindings()
-        ]);
 
         // For AJAX requests, return only the table content
         if ($request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
@@ -205,62 +189,11 @@ class BuildingController extends Controller
 
     private function createFinancialRecords(Building $building, Request $request)
     {
-        // 1. Building Financial Record oluştur
-        $contractMonths = Carbon::parse($request->contract_start_date)
-            ->diffInMonths(Carbon::parse($request->contract_end_date));
-
-        BuildingFinancialRecord::create([
-            'company_id' => auth()->user()->company_id,
-            'building_id' => $building->id,
-            'contract_amount' => $building->monthly_fee * $contractMonths,
-            'monthly_amount' => $building->monthly_fee,
-            'total_received' => 0,
-            'total_remaining' => $building->monthly_fee * $contractMonths,
-            'contract_start_date' => $request->contract_start_date,
-            'contract_end_date' => $request->contract_end_date,
-            'payment_frequency' => 'aylik',
-            'status' => 'aktif'
-        ]);
-
-        // 2. Düzenli ödeme kaydı oluştur (her ayın 5'inde)
-        RecurringPayment::create([
-            'company_id' => auth()->user()->company_id,
-            'title' => $building->name . ' - Aylık Bakım Ücreti',
-            'description' => $building->name . ' binası için aylık bakım hizmeti ücreti',
-            'amount' => $building->monthly_fee,
-            'type' => 'gelir',
-            'frequency' => 'aylik',
-            'category' => 'bina_geliri',
-            'start_date' => $request->contract_start_date,
-            'end_date' => $request->contract_end_date,
-            'day_of_month' => 5, // Her ayın 5'inde
-            'building_id' => $building->id,
-            'is_active' => true,
-            'notes' => 'Bina oluşturulurken otomatik oluşturuldu',
-            'created_by' => auth()->id()
-        ]);
-
-        // 3. İlk ay için alacak kaydı oluştur
-        $firstPaymentDate = Carbon::parse($request->contract_start_date)->addDays(5);
-        if ($firstPaymentDate->isPast()) {
-            $firstPaymentDate = now()->startOfMonth()->addDays(4); // Bu ayın 5'i
-        }
-
-        Receivable::create([
-            'company_id' => auth()->user()->company_id,
-            'title' => $building->name . ' - ' . $firstPaymentDate->locale('tr')->translatedFormat('F Y') . ' Bakım Ücreti',
-            'description' => $building->name . ' binası ' . $firstPaymentDate->locale('tr')->translatedFormat('F Y') . ' dönemi bakım hizmeti ücreti',
-            'total_amount' => $building->monthly_fee,
-            'paid_amount' => 0,
-            'remaining_amount' => $building->monthly_fee,
-            'due_date' => $firstPaymentDate,
-            'status' => 'beklemede',
-            'category' => 'bina_geliri',
-            'priority' => 'orta',
-            'building_id' => $building->id,
-            'notes' => 'Bina sözleşmesi oluşturulurken otomatik oluşturuldu',
-            'created_by' => auth()->id()
-        ]);
+        app(\App\Services\BuildingFinancialService::class)->createInitialRecords(
+            $building,
+            $request->contract_start_date,
+            $request->contract_end_date
+        );
     }
 
     private function uploadDocuments(Request $request, Building $building)
@@ -324,6 +257,8 @@ class BuildingController extends Controller
 
     public function show(Building $building)
     {
+        abort_if($building->company_id !== auth()->user()->company_id, 403);
+
         $building->load(['contacts', 'maintenanceSchedules' => function($q) {
             $q->with(['assignedEmployee', 'maintenanceReport'])->latest()->take(5);
         }, 'documents' => function($q) {
@@ -332,12 +267,11 @@ class BuildingController extends Controller
             $q->orderBy('control_date', 'desc')->take(5);
         }]);
 
-        // Aylık ödemeleri getir - hem AccountingEntry hem de BuildingDocument'ları kontrol et
-        $monthlyPayments = \App\Models\AccountingEntry::where('building_id', $building->id)
-            ->where('type', 'gelir')
-            ->where('category', 'bina_geliri')
-            ->whereYear('transaction_date', now()->year)
-            ->selectRaw('MONTH(transaction_date) as month, SUM(amount) as total_amount')
+        // Aylık ödemeleri getir - Receivable (alacak) tablosundan, tamamlanmış olanlar
+        $monthlyPayments = \App\Models\Receivable::where('building_id', $building->id)
+            ->where('status', 'tamamlandi')
+            ->whereYear('due_date', now()->year)
+            ->selectRaw('MONTH(due_date) as month, SUM(received_amount) as total_amount')
             ->groupBy('month')
             ->orderBy('month')
             ->get()
@@ -349,7 +283,7 @@ class BuildingController extends Controller
             $paymentMonth = sprintf('%04d-%02d', now()->year, $i);
             $hasReceipt = BuildingDocument::hasReceiptForMonth($building->id, now()->year, $i);
 
-            // Bu ay için ödeme var mı kontrol et (AccountingEntry'den)
+            // Bu ay için ödeme var mı kontrol et (Receivable'dan)
             $hasPayment = $monthlyPayments->has($i);
             $paymentAmount = $monthlyPayments->get($i)->total_amount ?? 0;
 
@@ -389,11 +323,15 @@ class BuildingController extends Controller
 
     public function edit(Building $building)
     {
+        abort_if($building->company_id !== auth()->user()->company_id, 403);
+
         return view('buildings.edit', compact('building'));
     }
 
     public function update(Request $request, Building $building)
     {
+        abort_if($building->company_id !== auth()->user()->company_id, 403);
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'address' => 'required|string',
@@ -445,7 +383,13 @@ class BuildingController extends Controller
         }
         // If coordinates are provided manually, use them directly (no geocoding)
 
-        $building->update($request->all());
+        $feeChanged = (float) $building->monthly_fee !== (float) $request->monthly_fee;
+
+        $building->update($request->except('company_id'));
+
+        if ($feeChanged) {
+            app(\App\Services\BuildingFinancialService::class)->syncMonthlyFeeChange($building);
+        }
 
         // Cache'i temizle ki güncellenmiş bina bilgileri görünsün
         $this->clearBuildingCache();
@@ -455,6 +399,8 @@ class BuildingController extends Controller
 
     public function destroy(Building $building)
     {
+        abort_if($building->company_id !== auth()->user()->company_id, 403);
+
         $building->delete();
 
         // Cache'i temizle ki silinen bina listeden kalksin

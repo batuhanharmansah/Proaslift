@@ -36,10 +36,14 @@
                 </form>
             @endif
             @if(in_array($quotation->status, ['sent', 'viewed', 'accepted'], true) && !$quotation->converted_receivable_id)
-                <form method="POST" action="{{ route('quotations.convert-to-receivable', $quotation) }}" onsubmit="return confirm('Bu teklif için alacak kaydı oluşturulsun mu?')">
-                    @csrf
-                    <button class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg">Alacağa Dönüştür</button>
-                </form>
+                @if($quotation->building_id)
+                    <form method="POST" action="{{ route('quotations.convert-to-receivable', $quotation) }}" onsubmit="return confirm('Bu teklif için alacak kaydı oluşturulsun mu?')">
+                        @csrf
+                        <button class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg">Alacağa Dönüştür</button>
+                    </form>
+                @else
+                    <span class="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm" title="Alacağa dönüştürmek için önce tekliften bir bina seçilmeli">Alacağa Dönüştür (bina seçilmemiş)</span>
+                @endif
             @endif
             @if(!in_array($quotation->status, ['accepted', 'converted', 'cancelled'], true))
                 <form method="POST" action="{{ route('quotations.cancel', $quotation) }}" onsubmit="return confirm('Teklif iptal edilsin mi?')">

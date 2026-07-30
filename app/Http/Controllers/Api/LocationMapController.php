@@ -173,6 +173,7 @@ class LocationMapController extends Controller
             ->whereDate('scheduled_date', $selectedDateCarbon) // Use scheduled_date, not created_at
             ->where('status', '!=', 'iptal') // Exclude cancelled
             ->with(['building', 'assignedEmployee'])
+            ->orderBy('scheduled_time')
             ->get()
             ->map(function ($schedule) {
                 // Only include if building has coordinates

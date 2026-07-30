@@ -17,6 +17,7 @@ class Company extends Model
         'email',
         'phone',
         'address',
+        'tax_number',
         'subscription_plan',
         'subscription_status',
         'subscription_start',

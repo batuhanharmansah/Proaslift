@@ -33,8 +33,9 @@ Route::prefix('mobile')->group(function () {
         ]);
     });
 
-    // Authentication routes: 10 attempts per minute (brute-force koruması)
-    Route::prefix('auth')->middleware('throttle:10,1')->group(function () {
+    // Authentication routes: 20 attempts per minute (brute-force koruması, paylaşımlı ofis/saha WiFi'lerinde
+    // birden fazla çalışanın aynı IP'den giriş yapabilmesi için 10'dan 20'ye çıkarıldı)
+    Route::prefix('auth')->middleware('throttle:20,1')->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
     });
 });
