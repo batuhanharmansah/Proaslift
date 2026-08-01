@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS `system_events` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `source` VARCHAR(20) NOT NULL COMMENT 'web | mobile',
   `type` VARCHAR(50) NOT NULL COMMENT 'exception | queue_failed | throttle_blocked | mobile_crash | mobile_api_error | health_check',
+  `category` VARCHAR(50) NULL COMMENT 'database | auth | validation | not_found | external_service | file_storage | rate_limit | queue | mobile | php_error | uncategorized',
   `severity` VARCHAR(20) NOT NULL DEFAULT 'warning' COMMENT 'critical | warning | info',
   `message` TEXT NOT NULL,
   `stack_trace` LONGTEXT NULL,
@@ -14,5 +15,6 @@ CREATE TABLE IF NOT EXISTS `system_events` (
   PRIMARY KEY (`id`),
   INDEX `system_events_source_type_index` (`source`, `type`),
   INDEX `system_events_severity_index` (`severity`),
-  INDEX `system_events_created_at_index` (`created_at`)
+  INDEX `system_events_created_at_index` (`created_at`),
+  INDEX `system_events_category_index` (`category`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

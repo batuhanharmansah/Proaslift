@@ -10,13 +10,21 @@
             <h1 class="text-3xl font-bold text-gray-900">Sistem Sağlığı İzleme</h1>
             <p class="text-gray-600 mt-1">Web ve mobil tarafta oluşan hatalar, başarısız kuyruk işleri ve throttle blokları burada listelenir.</p>
         </div>
-        <form method="POST" action="{{ route('system-monitor.import-history') }}"
-              onsubmit="return confirm('Log dosyalarındaki ve başarısız kuyruk işlerindeki geçmiş hatalar içe aktarılacak. Devam edilsin mi?');">
-            @csrf
-            <button type="submit" class="whitespace-nowrap bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900">
-                Eski Hataları İçe Aktar
-            </button>
-        </form>
+        <div class="flex gap-2">
+            <form method="POST" action="{{ route('system-monitor.categorize') }}">
+                @csrf
+                <button type="submit" class="whitespace-nowrap bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">
+                    Yeniden Kategorize Et
+                </button>
+            </form>
+            <form method="POST" action="{{ route('system-monitor.import-history') }}"
+                  onsubmit="return confirm('Log dosyalarındaki ve başarısız kuyruk işlerindeki geçmiş hatalar içe aktarılacak. Devam edilsin mi?');">
+                @csrf
+                <button type="submit" class="whitespace-nowrap bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900">
+                    Eski Hataları İçe Aktar
+                </button>
+            </form>
+        </div>
     </div>
 
     @if(session('success'))
@@ -53,6 +61,19 @@
         </div>
     </div>
 
+    <!-- Kategori Dağılımı -->
+    @if($categoryCounts->isNotEmpty())
+        <div class="flex flex-wrap gap-2 mb-6">
+            @foreach($categoryCounts as $row)
+                <a href="{{ route('system-monitor.index', array_merge(request()->except('page'), ['category' => $row->category])) }}"
+                   class="px-3 py-1.5 rounded-full text-xs font-medium border {{ request('category') === $row->category ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+                    {{ \App\Support\SystemEventCategorizer::label($row->category) }}
+                    <span class="opacity-60">({{ $row->total }})</span>
+                </a>
+            @endforeach
+        </div>
+    @endif
+
     <!-- Filtreler -->
     <form method="GET" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6 grid grid-cols-2 md:grid-cols-6 gap-3">
         <select name="source" class="rounded-lg border-gray-300 text-sm">
@@ -72,10 +93,16 @@
                 <option value="{{ $type }}" @selected(request('type')===$type)>{{ $type }}</option>
             @endforeach
         </select>
+        <select name="category" class="rounded-lg border-gray-300 text-sm">
+            <option value="">Tüm Kategoriler</option>
+            @foreach(\App\Support\SystemEventCategorizer::LABELS as $slug => $label)
+                <option value="{{ $slug }}" @selected(request('category')===$slug)>{{ $label }}</option>
+            @endforeach
+        </select>
         <input type="date" name="date_from" value="{{ request('date_from') }}" class="rounded-lg border-gray-300 text-sm" placeholder="Başlangıç">
         <input type="date" name="date_to" value="{{ request('date_to') }}" class="rounded-lg border-gray-300 text-sm" placeholder="Bitiş">
         <input type="text" name="q" value="{{ request('q') }}" placeholder="Mesajda ara..." class="rounded-lg border-gray-300 text-sm">
-        <div class="col-span-2 md:col-span-6 flex gap-2">
+        <div class="flex gap-2">
             <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Filtrele</button>
             <a href="{{ route('system-monitor.index') }}" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200">Temizle</a>
         </div>
@@ -88,7 +115,7 @@
                 <tr>
                     <th class="px-4 py-3 text-left font-medium text-gray-500">Tarih</th>
                     <th class="px-4 py-3 text-left font-medium text-gray-500">Kaynak</th>
-                    <th class="px-4 py-3 text-left font-medium text-gray-500">Tip</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-500">Kategori</th>
                     <th class="px-4 py-3 text-left font-medium text-gray-500">Önem</th>
                     <th class="px-4 py-3 text-left font-medium text-gray-500">Mesaj</th>
                     <th class="px-4 py-3"></th>
@@ -103,7 +130,11 @@
                                 {{ $event->source === 'web' ? 'Web' : 'Mobil' }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-gray-600">{{ $event->type }}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                {{ $event->categoryLabel() }}
+                            </span>
+                        </td>
                         <td class="px-4 py-3">
                             @php
                                 $severityClass = match($event->severity) {
@@ -124,6 +155,7 @@
                                     created_at: @js($event->created_at->format('d.m.Y H:i:s')),
                                     source: @js($event->source),
                                     type: @js($event->type),
+                                    category: @js($event->categoryLabel()),
                                     severity: @js($event->severity)
                                 }"
                                 class="text-blue-600 hover:text-blue-800 font-medium">Detay</button>
@@ -146,29 +178,31 @@
     <div x-show="detail" x-cloak
          class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
          @click.self="detail = null">
-        <div class="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[80vh] overflow-y-auto p-6" x-show="detail">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[70vh] flex flex-col" x-show="detail">
             <template x-if="detail">
-                <div>
-                    <div class="flex justify-between items-start mb-4">
+                <div class="flex flex-col overflow-hidden">
+                    <div class="flex justify-between items-start p-4 border-b border-gray-100 flex-shrink-0">
                         <div>
-                            <h3 class="text-lg font-bold text-gray-900" x-text="detail.type"></h3>
-                            <p class="text-sm text-gray-500" x-text="detail.created_at"></p>
+                            <h3 class="text-base font-bold text-gray-900" x-text="detail.type"></h3>
+                            <p class="text-xs text-gray-500 mt-0.5" x-text="detail.category + ' · ' + detail.created_at"></p>
                         </div>
-                        <button @click="detail = null" class="text-gray-400 hover:text-gray-600">✕</button>
+                        <button @click="detail = null" class="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
                     </div>
-                    <p class="text-gray-800 mb-4" x-text="detail.message"></p>
-                    <template x-if="detail.context">
-                        <div class="mb-4">
-                            <h4 class="text-sm font-semibold text-gray-600 mb-1">Bağlam</h4>
-                            <pre class="bg-gray-50 rounded-lg p-3 text-xs overflow-x-auto" x-text="JSON.stringify(detail.context, null, 2)"></pre>
-                        </div>
-                    </template>
-                    <template x-if="detail.stack">
-                        <div>
-                            <h4 class="text-sm font-semibold text-gray-600 mb-1">Stack Trace</h4>
-                            <pre class="bg-gray-50 rounded-lg p-3 text-xs overflow-x-auto whitespace-pre-wrap" x-text="detail.stack"></pre>
-                        </div>
-                    </template>
+                    <div class="p-4 overflow-y-auto text-sm">
+                        <p class="text-gray-800 mb-4 break-words" x-text="detail.message"></p>
+                        <template x-if="detail.context">
+                            <div class="mb-4">
+                                <h4 class="text-xs font-semibold text-gray-600 mb-1 uppercase">Bağlam</h4>
+                                <pre class="bg-gray-50 rounded-lg p-3 text-xs overflow-x-auto max-h-40 overflow-y-auto" x-text="JSON.stringify(detail.context, null, 2)"></pre>
+                            </div>
+                        </template>
+                        <template x-if="detail.stack">
+                            <div>
+                                <h4 class="text-xs font-semibold text-gray-600 mb-1 uppercase">Stack Trace</h4>
+                                <pre class="bg-gray-50 rounded-lg p-3 text-xs overflow-x-auto whitespace-pre-wrap max-h-64 overflow-y-auto" x-text="detail.stack"></pre>
+                            </div>
+                        </template>
+                    </div>
                 </div>
             </template>
         </div>

@@ -24,6 +24,10 @@ class SystemMonitorController extends Controller
             $query->where('severity', $request->string('severity'));
         }
 
+        if ($request->filled('category')) {
+            $query->where('category', $request->string('category'));
+        }
+
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date('date_from'));
         }
@@ -52,7 +56,12 @@ class SystemMonitorController extends Controller
 
         $types = SystemEvent::select('type')->distinct()->orderBy('type')->pluck('type');
 
-        return view('system-monitor.index', compact('events', 'summary', 'types'));
+        $categoryCounts = SystemEvent::selectRaw('category, count(*) as total')
+            ->groupBy('category')
+            ->orderByDesc('total')
+            ->get();
+
+        return view('system-monitor.index', compact('events', 'summary', 'types', 'categoryCounts'));
     }
 
     public function show(SystemEvent $event)
@@ -69,7 +78,18 @@ class SystemMonitorController extends Controller
     public function importHistory(Request $request)
     {
         Artisan::call('system-events:import-history');
+        $importOutput = Artisan::output();
 
-        return back()->with('success', 'Geçmiş hatalar içe aktarıldı: ' . trim(Artisan::output()));
+        Artisan::call('system-events:categorize');
+        $categorizeOutput = Artisan::output();
+
+        return back()->with('success', trim($importOutput) . "\n" . trim($categorizeOutput));
+    }
+
+    public function categorize(Request $request)
+    {
+        Artisan::call('system-events:categorize');
+
+        return back()->with('success', trim(Artisan::output()));
     }
 }

@@ -91,6 +91,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->name('su
 Route::middleware(['auth', 'system.monitor'])->prefix('system-monitor')->name('system-monitor.')->group(function () {
     Route::get('/', [SystemMonitorController::class, 'index'])->name('index');
     Route::post('/import-history', [SystemMonitorController::class, 'importHistory'])->name('import-history');
+    Route::post('/categorize', [SystemMonitorController::class, 'categorize'])->name('categorize');
     Route::get('/{event}', [SystemMonitorController::class, 'show'])->name('show');
 });
 
