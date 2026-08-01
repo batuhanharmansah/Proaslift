@@ -90,6 +90,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->name('su
 // SİSTEM SAĞLIĞI İZLEME (sadece SYSTEM_MONITOR_EMAILS içindeki kullanıcılar)
 Route::middleware(['auth', 'system.monitor'])->prefix('system-monitor')->name('system-monitor.')->group(function () {
     Route::get('/', [SystemMonitorController::class, 'index'])->name('index');
+    Route::post('/import-history', [SystemMonitorController::class, 'importHistory'])->name('import-history');
     Route::get('/{event}', [SystemMonitorController::class, 'show'])->name('show');
 });
 

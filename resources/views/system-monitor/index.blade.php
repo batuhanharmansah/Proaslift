@@ -5,10 +5,25 @@
 
 @section('content')
 <div class="p-6" x-data="{ detail: null }">
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Sistem Sağlığı İzleme</h1>
-        <p class="text-gray-600 mt-1">Web ve mobil tarafta oluşan hatalar, başarısız kuyruk işleri ve throttle blokları burada listelenir.</p>
+    <div class="mb-8 flex items-start justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Sistem Sağlığı İzleme</h1>
+            <p class="text-gray-600 mt-1">Web ve mobil tarafta oluşan hatalar, başarısız kuyruk işleri ve throttle blokları burada listelenir.</p>
+        </div>
+        <form method="POST" action="{{ route('system-monitor.import-history') }}"
+              onsubmit="return confirm('Log dosyalarındaki ve başarısız kuyruk işlerindeki geçmiş hatalar içe aktarılacak. Devam edilsin mi?');">
+            @csrf
+            <button type="submit" class="whitespace-nowrap bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900">
+                Eski Hataları İçe Aktar
+            </button>
+        </form>
     </div>
+
+    @if(session('success'))
+        <div class="mb-6 bg-green-50 border border-green-200 text-green-800 rounded-lg p-4 text-sm whitespace-pre-line">
+            {{ session('success') }}
+        </div>
+    @endif
 
     <!-- Özet Kartlar -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">

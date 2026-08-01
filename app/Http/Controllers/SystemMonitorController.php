@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SystemEvent;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 
 class SystemMonitorController extends Controller
 {
@@ -57,5 +58,18 @@ class SystemMonitorController extends Controller
     public function show(SystemEvent $event)
     {
         return response()->json($event);
+    }
+
+    /**
+     * SSH erişimi olmayan paylaşımlı hosting'lerde (Natro/Plesk) artisan komutlarını
+     * çalıştırmanın bir yolu olmadığı için, geçmiş hata içe aktarma komutunu bu
+     * sayfadaki bir butondan tetiklenebilir hale getirir. Bu route zaten
+     * 'system.monitor' middleware'i ile korunuyor (sadece izinli e-postalar).
+     */
+    public function importHistory(Request $request)
+    {
+        Artisan::call('system-events:import-history');
+
+        return back()->with('success', 'Geçmiş hatalar içe aktarıldı: ' . trim(Artisan::output()));
     }
 }
