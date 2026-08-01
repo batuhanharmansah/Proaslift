@@ -22,6 +22,7 @@ use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MaintenanceApprovalController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\PublicQuotationController;
+use App\Http\Controllers\SystemMonitorController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -84,6 +85,12 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->name('su
     Route::post('payments/{payment}/mark-paid', [SuperAdminPaymentController::class, 'markAsPaid'])->name('payments.mark-paid');
     Route::post('payments/{payment}/mark-overdue', [SuperAdminPaymentController::class, 'markAsOverdue'])->name('payments.mark-overdue');
     Route::post('payments/bulk-create', [SuperAdminPaymentController::class, 'bulkCreate'])->name('payments.bulk-create');
+});
+
+// SİSTEM SAĞLIĞI İZLEME (sadece SYSTEM_MONITOR_EMAILS içindeki kullanıcılar)
+Route::middleware(['auth', 'system.monitor'])->prefix('system-monitor')->name('system-monitor.')->group(function () {
+    Route::get('/', [SystemMonitorController::class, 'index'])->name('index');
+    Route::get('/{event}', [SystemMonitorController::class, 'show'])->name('show');
 });
 
 // COMPANY ADMIN DASHBOARD

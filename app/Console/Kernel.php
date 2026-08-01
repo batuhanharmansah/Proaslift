@@ -23,6 +23,12 @@ class Kernel extends ConsoleKernel
                  ->dailyAt('00:15')
                  ->withoutOverlapping()
                  ->runInBackground();
+
+        // Sistem sağlığı izleme tablosunun 30 günden eski kayıtlarını temizle (her gün 00:30'da)
+        $schedule->command('system-events:prune')
+                 ->dailyAt('00:30')
+                 ->withoutOverlapping()
+                 ->runInBackground();
     }
 
     /**

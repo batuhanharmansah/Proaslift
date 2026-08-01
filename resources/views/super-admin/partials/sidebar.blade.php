@@ -100,6 +100,19 @@
                 <li class="mt-6">
                     <div class="text-xs font-semibold leading-6 text-gray-400 uppercase tracking-wider mb-3">Sistem</div>
                     <ul role="list" class="space-y-1">
+                        @if(in_array(auth()->user()->email, array_filter(array_map('trim', explode(',', config('app.system_monitor_emails', 'superadmin@harmansah.com')))), true))
+                        <li>
+                            <a href="{{ route('system-monitor.index') }}"
+                               class="group flex items-center gap-x-3 rounded-lg p-3 text-sm leading-6 font-medium transition-all duration-200 {{ request()->routeIs('system-monitor.*') ? 'bg-blue-600 text-gray-100' : 'text-gray-300 hover:text-gray-100 hover:bg-gray-800' }}">
+                                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ request()->routeIs('system-monitor.*') ? 'bg-blue-700' : 'bg-gray-700 group-hover:bg-gray-600' }}">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                                    </svg>
+                                </div>
+                                <span class="truncate">Sistem Sağlığı</span>
+                            </a>
+                        </li>
+                        @endif
                         <li>
                             <a href="#"
                                class="group flex items-center gap-x-3 rounded-lg p-3 text-sm leading-6 font-medium transition-all duration-200 text-gray-500 cursor-not-allowed">

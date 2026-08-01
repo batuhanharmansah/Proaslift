@@ -19,6 +19,12 @@ return [
     'name' => env('APP_NAME', 'Laravel'),
 
     /*
+     * Sistem sağlığı izleme sayfasına (/system-monitor) erişebilecek e-postalar, virgülle ayrılmış.
+     * config:cache ile uyumlu olması için env() burada, config dosyasında okunur.
+     */
+    'system_monitor_emails' => env('SYSTEM_MONITOR_EMAILS', 'superadmin@harmansah.com'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------

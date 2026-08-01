@@ -4,6 +4,16 @@
  * 📱 ENTERPRISE MOBILE API ROUTES
  * 35 yıllık yazılımcı tecrübesi ile tasarlanmış
  * RESTful API, güvenlik, performans, error handling
+ *
+ * ÖNEMLİ (rate limiting mimarisi):
+ * Laravel'in temel `throttle:maxAttempts,decayMinutes` middleware'i, giriş yapmış
+ * bir kullanıcı için sayaç anahtarını SADECE kullanıcı ID'sine göre oluşturur
+ * (üçüncü bir "prefix" parametresi verilmedikçe route'tan bağımsızdır).
+ * Bu yüzden her mantıksal grup (`throttle:N,1,BENZERSIZ-PREFIX` şeklinde) kendi
+ * bağımsız sayacına sahip olacak şekilde AYRI bir prefix ile tanımlanmıştır.
+ * Aksi halde örn. Binalar listesini görüntülemek (okuma) ile Arıza Bildirimi
+ * göndermek (yazma) AYNI ortak sayacı paylaşır ve normal gezinme bile yazma
+ * işlemlerini "too many attempts" (429) hatasına düşürebilir.
  */
 
 use Illuminate\Http\Request;
@@ -17,6 +27,7 @@ use App\Http\Controllers\Api\Mobile\IssueReportController;
 use App\Http\Controllers\Api\Mobile\FinancialController;
 use App\Http\Controllers\Api\Mobile\NotificationController;
 use App\Http\Controllers\Api\Mobile\ElevatorLabelController;
+use App\Http\Controllers\Api\Mobile\MonitoringController;
 use App\Http\Controllers\Api\LocationMapController;
 use App\Http\Controllers\Api\EmployeeController as LegacyEmployeeController;
 
@@ -24,7 +35,7 @@ use App\Http\Controllers\Api\EmployeeController as LegacyEmployeeController;
 Route::prefix('mobile')->group(function () {
 
     // Health check (rate limit: 30/dk)
-    Route::middleware('throttle:30,1')->get('/health', function () {
+    Route::middleware('throttle:30,1,mobile-health')->get('/health', function () {
         return response()->json([
             'success' => true,
             'message' => 'Mobile API is running',
@@ -35,7 +46,7 @@ Route::prefix('mobile')->group(function () {
 
     // Authentication routes: 20 attempts per minute (brute-force koruması, paylaşımlı ofis/saha WiFi'lerinde
     // birden fazla çalışanın aynı IP'den giriş yapabilmesi için 10'dan 20'ye çıkarıldı)
-    Route::prefix('auth')->middleware('throttle:20,1')->group(function () {
+    Route::prefix('auth')->middleware('throttle:20,1,mobile-auth-login')->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
     });
 });
@@ -43,40 +54,41 @@ Route::prefix('mobile')->group(function () {
 // ==================== PROTECTED ROUTES ====================
 // Yazma (POST/PUT/PATCH/DELETE) işlemleri: 30/dk
 // Okuma (GET) işlemleri: 120/dk
+// Her grup kendi bağımsız throttle prefix'ine sahiptir (yukarıdaki notu okuyun).
 Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
 
     // ==================== AUTH ROUTES (refresh: 60/dk, diğer yazma: 10/dk, okuma: 60/dk) ====================
     Route::prefix('auth')->group(function () {
         // Token yenileme — client tarafından otomatik tetiklenir, daha yüksek limit
-        Route::middleware('throttle:60,1')->group(function () {
+        Route::middleware('throttle:60,1,mobile-auth-refresh')->group(function () {
             Route::post('/refresh', [AuthController::class, 'refresh']);
         });
-        Route::middleware('throttle:10,1')->group(function () {
+        Route::middleware('throttle:10,1,mobile-auth-write')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
             Route::put('/profile', [AuthController::class, 'updateProfile']);
             Route::post('/change-password', [AuthController::class, 'changePassword']);
             Route::post('/device-token', [AuthController::class, 'registerDeviceToken']);
             Route::delete('/device-token', [AuthController::class, 'unregisterDeviceToken']);
         });
-        Route::middleware('throttle:60,1')->group(function () {
+        Route::middleware('throttle:60,1,mobile-auth-read')->group(function () {
             Route::get('/profile', [AuthController::class, 'profile']);
         });
     });
 
     // ==================== DASHBOARD ROUTES (GET: 120/dk) ====================
-    Route::prefix('dashboard')->middleware('throttle:120,1')->group(function () {
+    Route::prefix('dashboard')->middleware('throttle:120,1,mobile-dashboard-read')->group(function () {
         Route::get('/stats', [DashboardController::class, 'getStats']);
         Route::get('/charts', [DashboardController::class, 'getCharts']);
         Route::get('/quick-actions', [DashboardController::class, 'getQuickActions']);
     });
 
     // ==================== STOCK WARNINGS ROUTE (GET: 120/dk) ====================
-    Route::middleware('throttle:120,1')->get('/stock-warnings', [DashboardController::class, 'getStockWarnings']);
+    Route::middleware('throttle:120,1,mobile-stock-warnings-read')->get('/stock-warnings', [DashboardController::class, 'getStockWarnings']);
 
     // ==================== BUILDINGS ROUTES ====================
     Route::prefix('buildings')->group(function () {
         // Okuma: 120/dk
-        Route::middleware('throttle:120,1')->group(function () {
+        Route::middleware('throttle:120,1,mobile-buildings-read')->group(function () {
             Route::get('/', [BuildingController::class, 'index']);
             Route::get('/statistics', [BuildingController::class, 'getStatistics']);
             Route::prefix('{id}')->group(function () {
@@ -87,7 +99,7 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
             });
         });
         // Yazma: 30/dk
-        Route::middleware('throttle:30,1')->group(function () {
+        Route::middleware('throttle:30,1,mobile-buildings-write')->group(function () {
             Route::post('/', [BuildingController::class, 'store']);
             Route::post('/search-qr', [BuildingController::class, 'searchByQR']);
         });
@@ -96,7 +108,7 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
     // ==================== EMPLOYEES ROUTES ====================
     Route::prefix('employees')->group(function () {
         // Okuma: 120/dk
-        Route::middleware('throttle:120,1')->group(function () {
+        Route::middleware('throttle:120,1,mobile-employees-read')->group(function () {
             Route::get('/', [EmployeeController::class, 'index']);
             Route::prefix('{id}')->group(function () {
                 Route::get('/', [EmployeeController::class, 'show']);
@@ -104,7 +116,7 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
             });
         });
         // Yazma: 30/dk
-        Route::middleware('throttle:30,1')->group(function () {
+        Route::middleware('throttle:30,1,mobile-employees-write')->group(function () {
             Route::put('/{id}', [EmployeeController::class, 'update']);
         });
     });
@@ -112,7 +124,7 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
     // ==================== MAINTENANCE ROUTES ====================
     Route::prefix('maintenance')->group(function () {
         // Okuma: 120/dk
-        Route::middleware('throttle:120,1')->group(function () {
+        Route::middleware('throttle:120,1,mobile-maintenance-read')->group(function () {
             Route::get('/', [MaintenanceController::class, 'index']);
             Route::get('/calendar', [MaintenanceController::class, 'getCalendar']);
             Route::get('/products', [MaintenanceController::class, 'products']);
@@ -120,7 +132,7 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
             Route::get('/{id}', [MaintenanceController::class, 'show']);
         });
         // Yazma: 30/dk
-        Route::middleware('throttle:30,1')->group(function () {
+        Route::middleware('throttle:30,1,mobile-maintenance-write')->group(function () {
             Route::post('/', [MaintenanceController::class, 'store']);
             Route::post('/{id}/start', [MaintenanceController::class, 'start']);
             Route::put('/{id}', [MaintenanceController::class, 'update']);
@@ -132,12 +144,12 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
 
     // ==================== ISSUE REPORTS ROUTES ====================
     Route::prefix('issues')->group(function () {
-        Route::middleware('throttle:120,1')->group(function () {
+        Route::middleware('throttle:120,1,mobile-issues-read')->group(function () {
             Route::get('/', [IssueReportController::class, 'index']);
             Route::get('/stats', [IssueReportController::class, 'getStats']);
             Route::get('/{id}', [IssueReportController::class, 'show']);
         });
-        Route::middleware('throttle:30,1')->group(function () {
+        Route::middleware('throttle:30,1,mobile-issues-write')->group(function () {
             Route::post('/', [IssueReportController::class, 'store']);
             Route::put('/{id}/status', [IssueReportController::class, 'updateStatus']);
             Route::post('/{id}/assign', [IssueReportController::class, 'assign']);
@@ -150,7 +162,7 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
     // ==================== FINANCIAL ROUTES ====================
     Route::prefix('financial')->group(function () {
         // Okuma: 120/dk
-        Route::middleware('throttle:120,1')->group(function () {
+        Route::middleware('throttle:120,1,mobile-financial-read')->group(function () {
             Route::get('/summary', [FinancialController::class, 'getSummary']);
             Route::get('/day-end', [FinancialController::class, 'getDayEnd']);
             Route::get('/day-end/export/excel', [FinancialController::class, 'dayEndExportExcel']);
@@ -165,7 +177,7 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
             Route::get('/recurring-payments', [FinancialController::class, 'getRecurringPayments']);
         });
         // Yazma: 30/dk
-        Route::middleware('throttle:30,1')->group(function () {
+        Route::middleware('throttle:30,1,mobile-financial-write')->group(function () {
             Route::post('/accounts', [FinancialController::class, 'createAccount']);
             Route::put('/accounts/{id}', [FinancialController::class, 'updateAccount']);
             Route::post('/accounts/update-balance', [FinancialController::class, 'updateAccountBalance']);
@@ -190,12 +202,12 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
     // ==================== NOTIFICATIONS ROUTES ====================
     Route::prefix('notifications')->group(function () {
         // Okuma: 120/dk
-        Route::middleware('throttle:120,1')->group(function () {
+        Route::middleware('throttle:120,1,mobile-notifications-read')->group(function () {
             Route::get('/', [NotificationController::class, 'index']);
             Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
         });
         // Yazma: 30/dk
-        Route::middleware('throttle:30,1')->group(function () {
+        Route::middleware('throttle:30,1,mobile-notifications-write')->group(function () {
             Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
             Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
             Route::post('/read-by-type', [NotificationController::class, 'markByTypeAsRead']);
@@ -206,7 +218,7 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
     });
 
     // ==================== REPORTS ROUTES (GET: 60/dk — ağır sorgular) ====================
-    Route::prefix('reports')->middleware('throttle:60,1')->group(function () {
+    Route::prefix('reports')->middleware('throttle:60,1,mobile-reports-read')->group(function () {
         Route::get('/summary', function (Request $request) {
             try {
                 $companyId = $request->user()->company_id;
@@ -237,14 +249,14 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
 
     // ==================== ELEVATOR LABEL ROUTES ====================
     Route::prefix('elevator-labels')->group(function () {
-        Route::middleware('throttle:120,1')->group(function () {
+        Route::middleware('throttle:120,1,mobile-elevator-labels-read')->group(function () {
             Route::get('/', [ElevatorLabelController::class, 'index']);
             Route::get('/stats', [ElevatorLabelController::class, 'stats']);
             Route::get('/building/{buildingId}/history', [ElevatorLabelController::class, 'buildingHistory']);
             Route::get('/{id}', [ElevatorLabelController::class, 'show']);
         });
 
-        Route::middleware('throttle:30,1')->group(function () {
+        Route::middleware('throttle:30,1,mobile-elevator-labels-write')->group(function () {
             Route::post('/{id}/complete', [ElevatorLabelController::class, 'complete']);
             Route::post('/{id}/seal', [ElevatorLabelController::class, 'seal']);
             Route::post('/{id}/cancel', [ElevatorLabelController::class, 'cancel']);
@@ -253,13 +265,18 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
 
     // ==================== LOCATION TRACKING ROUTES ====================
     Route::prefix('location-map')->group(function () {
-        Route::middleware('throttle:120,1')->group(function () {
+        Route::middleware('throttle:120,1,mobile-location-map-read')->group(function () {
             Route::get('/data', [LocationMapController::class, 'getMapData']);
             Route::get('/maintenance/{maintenanceScheduleId}/checks', [LocationMapController::class, 'getLocationChecks']);
         });
     });
 
-    Route::prefix('employee')->middleware('throttle:30,1')->group(function () {
+    Route::prefix('employee')->middleware('throttle:30,1,mobile-employee-location-write')->group(function () {
         Route::post('/location/update', [LegacyEmployeeController::class, 'updateLocation']);
+    });
+
+    // ==================== MONITORING ROUTES (crash/hata raporlama: 60/dk) ====================
+    Route::prefix('monitoring')->middleware('throttle:60,1,mobile-monitoring-write')->group(function () {
+        Route::post('/log-error', [MonitoringController::class, 'logError']);
     });
 });
