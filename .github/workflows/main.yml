@@ -1,3 +1,4 @@
+# Deploy tetikleyici (yeniden deneme)
 name: Deploy to Natro (FTP)
 
 on:
