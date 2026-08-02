@@ -14,8 +14,10 @@ export const PASSWORD = __ENV.LOADTEST_PASSWORD || '';
 // "Yük Testi Verisini Temizle" butonuyla (sadece binalar için) temizlenebilir.
 export const LOADTEST_PREFIX = 'LOADTEST_';
 
+// __VU/__ITER sadece VU (default function) bağlamında var — setup()/teardown()
+// içinde tanımsız oldukları için Math.random() kullanıyoruz, her yerde çalışır.
 export function uniqueName() {
-  return `${LOADTEST_PREFIX}${Date.now()}_${__VU}_${__ITER}`;
+  return `${LOADTEST_PREFIX}${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
 }
 
 export function login() {

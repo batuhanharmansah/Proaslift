@@ -11,35 +11,46 @@
 // hiçbir BuildingContact'ı olmadığı için sendApprovalSms() 'no_contact' ile atlanır —
 // yani GERÇEK SMS GİTMEZ (koddan doğrulandı). Sahte/gerçek bir binaya karşı complete
 // çağırmayın — orada gerçek SMS gidebilir.
+//
+// TASARIM NOTU: Bina SADECE BİR KEZ, testin başında (setup()) oluşturulur ve tüm
+// iterasyonlar onu paylaşır — her iterasyonda yeni bina açmak hem gerçekçi değil
+// (gerçekte bakım işleri mevcut binalara açılır) hem de mobile-buildings-write
+// throttle'ını (30/dk) gereksiz yere zorluyordu. Her iterasyon kendi YENİ bakım
+// kaydını oluşturur (paylaşılan bir kaydı start/complete etmek ikinci iterasyonda
+// "durum uygun değil" hatası verir, bu yüzden maintenance paylaşılamaz, sadece bina).
 
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { getSession, authHeaders, createLoadTestBuilding, uniqueName, BASE_URL } from './_helpers.js';
+import { login, authHeaders, createLoadTestBuilding, uniqueName, BASE_URL } from './_helpers.js';
 
 export const options = {
-  vus: 3, // yazma ağırlıklı zincir, düşük VU yeterli
+  vus: 1, // yazma ağırlıklı zincir, doğruluk odaklı — throughput değil
   duration: '30s',
 };
 
-export default function () {
-  const session = getSession();
-  if (!session) return;
+export function setup() {
+  const session = login();
+  if (!session) return null;
   const headers = authHeaders(session.token);
 
-  // Kendi LOADTEST_ binamızı oluştur (gerçek veriye dokunmamak için)
   const building = createLoadTestBuilding(headers);
-  if (!building) return;
+  if (!building) return null;
 
-  sleep(0.5);
+  return { token: session.token, employeeId: session.employeeId, buildingId: building.id };
+}
+
+export default function (data) {
+  if (!data) return;
+  const headers = authHeaders(data.token);
 
   // 1) Bakım planla — varsa kendi employee id'mize ata (start adımı için gerekli)
   const createPayload = JSON.stringify({
-    building_id: building.id,
+    building_id: data.buildingId,
     maintenance_type: 'rutin_bakim',
     scheduled_date: new Date().toISOString().slice(0, 10),
     priority: 'normal',
     description: `${uniqueName()} - yük testi bakımı`,
-    assigned_employee_id: session.employeeId,
+    assigned_employee_id: data.employeeId,
   });
 
   const createRes = http.post(`${BASE_URL}/api/mobile/maintenance`, createPayload, { headers });
@@ -57,10 +68,10 @@ export default function () {
   if (!created) return;
   const maintenanceId = JSON.parse(createRes.body).data.id;
 
-  sleep(0.5);
+  sleep(1);
 
   // Employee kaydı yoksa (saf admin hesabı) start/complete'e giremeyiz — burada durur.
-  if (!session.employeeId) {
+  if (!data.employeeId) {
     return;
   }
 
@@ -79,7 +90,7 @@ export default function () {
 
   if (!started) return;
 
-  sleep(0.5);
+  sleep(1);
 
   // 3) İşi tamamla → MaintenanceReport oluşmalı, onay akışı tetiklenmeli (ama SMS gitmemeli)
   const completePayload = JSON.stringify({
@@ -119,5 +130,5 @@ export default function () {
     },
   });
 
-  sleep(1);
+  sleep(2);
 }
