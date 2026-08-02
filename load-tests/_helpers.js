@@ -46,6 +46,21 @@ export function authHeaders(token) {
   };
 }
 
+// Bu dosya k6'da her VU (sanal kullanıcı) için ayrı ayrı, bir kez yüklenir — modül
+// seviyesindeki değişkenler o VU'nun TÜM iterasyonları boyunca hafızada kalır.
+// Bunu kullanarak her VU'nun sadece BİR KEZ login olmasını, sonraki her iterasyonda
+// token'ı önbellekten kullanmasını sağlıyoruz — tıpkı gerçek bir mobil uygulamanın
+// oturumu boyunca tek bir token'ı saklayıp tekrar tekrar kullanması gibi.
+// (login-test.js hariç — o zaten login endpoint'ini bilerek/tekrar tekrar test ediyor.)
+let cachedSession = null;
+
+export function getSession() {
+  if (!cachedSession) {
+    cachedSession = login();
+  }
+  return cachedSession;
+}
+
 // Test verisi olarak kullanılacak, sözleşmesi 3 ay olan bir LOADTEST_ bina oluşturur.
 // Dönen değer: { id, monthly_fee, contract_start_date, contract_end_date } ya da null (başarısızsa).
 export function createLoadTestBuilding(headers, monthlyFee = 500) {

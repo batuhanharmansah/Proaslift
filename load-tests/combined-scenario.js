@@ -8,7 +8,7 @@
 
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { login, authHeaders, createLoadTestBuilding, uniqueName, BASE_URL, EMAIL, PASSWORD } from './_helpers.js';
+import { getSession, authHeaders, createLoadTestBuilding, uniqueName, BASE_URL, EMAIL, PASSWORD } from './_helpers.js';
 
 export const options = {
   scenarios: {
@@ -32,7 +32,7 @@ export const options = {
 
 // ==================== ÇALIŞAN AKIŞI (mobil) ====================
 export function employeeFlow() {
-  const session = login();
+  const session = getSession();
   if (!session) return;
   const headers = authHeaders(session.token);
 

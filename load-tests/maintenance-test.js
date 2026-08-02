@@ -14,7 +14,7 @@
 
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { login, authHeaders, createLoadTestBuilding, uniqueName, BASE_URL } from './_helpers.js';
+import { getSession, authHeaders, createLoadTestBuilding, uniqueName, BASE_URL } from './_helpers.js';
 
 export const options = {
   vus: 3, // yazma ağırlıklı zincir, düşük VU yeterli
@@ -22,7 +22,7 @@ export const options = {
 };
 
 export default function () {
-  const session = login();
+  const session = getSession();
   if (!session) return;
   const headers = authHeaders(session.token);
 
