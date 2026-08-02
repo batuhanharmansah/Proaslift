@@ -89,13 +89,19 @@ export default function () {
       sleep(0.5);
 
       // 3b) Düzenli ödemeler listesinde bu binaya ait kayıt var mı, tutarı doğru mu, aktif mi
-      const recurringRes = http.get(`${BASE_URL}/api/mobile/financial/recurring-payments`, { headers });
+      // per_page yüksek tutuluyor çünkü canlı sistemde başka birçok gerçek kayıt olabilir
+      // ve endpoint building_id'ye göre filtre desteklemiyor (client-side arama yapıyoruz).
+      // NOT: response'ta building_id düz alan değil, iç içe building:{id,name} objesi olarak dönüyor.
+      const recurringRes = http.get(
+        `${BASE_URL}/api/mobile/financial/recurring-payments?per_page=100&sort_by=created_at&sort_order=desc`,
+        { headers }
+      );
       check(recurringRes, {
         'recurring payments 200': (r) => r.status === 200,
         'bu binaya ait aktif düzenli ödeme var, tutarı doğru': (r) => {
           try {
             const list = JSON.parse(r.body).data.data;
-            const match = list.find((p) => p.building_id === building.id);
+            const match = list.find((p) => p.building && p.building.id === building.id);
             return !!match && match.is_active === true && Number(match.amount) === monthlyFee;
           } catch {
             return false;
