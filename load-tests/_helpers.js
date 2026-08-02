@@ -4,9 +4,11 @@
 import http from 'k6/http';
 import { check } from 'k6';
 
-export const BASE_URL = 'https://proaslift.com'; // gerçek adresinizle değiştirin
-export const EMAIL = 'test@ornekfirma.com';       // test hesabı
-export const PASSWORD = 'test-sifre';              // test hesabı şifresi
+// Gerçek şifreyi hiçbir zaman dosyaya yazmayın/commit etmeyin — ortam değişkeni olarak verin:
+//   k6 run -e LOADTEST_EMAIL=admin@test.com -e LOADTEST_PASSWORD='Test123.' login-test.js
+export const BASE_URL = __ENV.LOADTEST_BASE_URL || 'https://proaslift.com';
+export const EMAIL = __ENV.LOADTEST_EMAIL || 'admin@test.com';
+export const PASSWORD = __ENV.LOADTEST_PASSWORD || '';
 
 // LOADTEST_ önekiyle oluşturulan her şey, "Sistem Sağlığı" sayfasındaki
 // "Yük Testi Verisini Temizle" butonuyla (sadece binalar için) temizlenebilir.

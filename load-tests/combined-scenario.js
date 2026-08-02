@@ -3,11 +3,12 @@
 // SONRA bunu çalıştırın; buradaki amaç "hepsi birlikteyken sistem ne yapıyor" sorusuna
 // cevap vermek, tek tek modül doğruluğu değil (o kısım diğer dosyalarda yapıldı).
 //
-// Çalıştırmak için: k6 run combined-scenario.js
+// Çalıştırmak için (şifreyi dosyaya yazmayın, ortam değişkeni olarak verin):
+//   k6 run -e LOADTEST_EMAIL=admin@test.com -e LOADTEST_PASSWORD='Test123.' combined-scenario.js
 
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { login, authHeaders, createLoadTestBuilding, uniqueName, BASE_URL } from './_helpers.js';
+import { login, authHeaders, createLoadTestBuilding, uniqueName, BASE_URL, EMAIL, PASSWORD } from './_helpers.js';
 
 export const options = {
   scenarios: {
@@ -85,7 +86,7 @@ export function adminFlow() {
 
   const loginRes = http.post(
     `${BASE_URL}/login`,
-    { email: 'admin@ornekfirma.com', password: 'test-sifre', _token: token },
+    { email: EMAIL, password: PASSWORD, _token: token },
     { jar, redirects: 3 }
   );
 
