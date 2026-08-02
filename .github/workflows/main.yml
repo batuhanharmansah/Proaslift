@@ -31,3 +31,4 @@ jobs:
             **/okulia.sql
             **/config.php
             **/api/test-login.*
+            **/load-tests/**

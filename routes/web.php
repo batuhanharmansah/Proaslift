@@ -92,6 +92,7 @@ Route::middleware(['auth', 'system.monitor'])->prefix('system-monitor')->name('s
     Route::get('/', [SystemMonitorController::class, 'index'])->name('index');
     Route::post('/import-history', [SystemMonitorController::class, 'importHistory'])->name('import-history');
     Route::post('/categorize', [SystemMonitorController::class, 'categorize'])->name('categorize');
+    Route::post('/cleanup-load-test-data', [SystemMonitorController::class, 'cleanupLoadTestData'])->name('cleanup-load-test-data');
     Route::get('/{event}', [SystemMonitorController::class, 'show'])->name('show');
 });
 

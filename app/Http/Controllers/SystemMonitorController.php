@@ -92,4 +92,15 @@ class SystemMonitorController extends Controller
 
         return back()->with('success', trim(Artisan::output()));
     }
+
+    /**
+     * Yük testi (load-tests/) sırasında oluşan LOADTEST_ önekli sahte binaları
+     * ve bağlı finansal kayıtları temizler. Aynı SSH-yok kısıtı için web'den tetiklenir.
+     */
+    public function cleanupLoadTestData(Request $request)
+    {
+        Artisan::call('load-test:cleanup');
+
+        return back()->with('success', trim(Artisan::output()));
+    }
 }

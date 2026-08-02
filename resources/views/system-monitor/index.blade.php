@@ -11,6 +11,13 @@
             <p class="text-gray-600 mt-1">Web ve mobil tarafta oluşan hatalar, başarısız kuyruk işleri ve throttle blokları burada listelenir.</p>
         </div>
         <div class="flex gap-2">
+            <form method="POST" action="{{ route('system-monitor.cleanup-load-test-data') }}"
+                  onsubmit="return confirm('LOADTEST_ önekli sahte binalar ve bağlı finansal kayıtlar silinecek. Devam edilsin mi?');">
+                @csrf
+                <button type="submit" class="whitespace-nowrap bg-white border border-red-300 text-red-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-50">
+                    Yük Testi Verisini Temizle
+                </button>
+            </form>
             <form method="POST" action="{{ route('system-monitor.categorize') }}">
                 @csrf
                 <button type="submit" class="whitespace-nowrap bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">
