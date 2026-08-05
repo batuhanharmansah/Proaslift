@@ -163,6 +163,7 @@
 
         .hero-actions {
             display: flex;
+            flex-wrap: wrap;
             gap: 1rem;
             margin-top: 2rem;
         }
@@ -746,8 +747,9 @@
                     <h1>Asansör Firmaları için Dijital Dönüşüm Çözümü</h1>
                     <p>Bakım, müşteri, bina ve finans süreçlerinizi tek panelden yönetin. Kağıt, Excel ve telefon trafiğine son verin.</p>
                     <div class="hero-actions">
-                        <a href="https://wa.me/905455865551?text=Merhaba%2C%20Asans%C3%B6r%20Otomasyon%20sistemi%20hakk%C4%B1nda%20demo%20talep%20etmek%20istiyorum." target="_blank" rel="noopener" class="btn btn-primary btn-large">Demo Talep Et</a>
+                        <a href="https://wa.me/905448946894?text=Merhaba%2C%20Asans%C3%B6r%20Otomasyon%20sistemi%20hakk%C4%B1nda%20demo%20talep%20etmek%20istiyorum." target="_blank" rel="noopener" class="btn btn-primary btn-large">Demo Talep Et</a>
                         <a href="{{ route('login') }}" class="btn btn-secondary btn-large">Hemen Başla</a>
+                        <a href="tel:+905448946894" class="btn btn-secondary btn-large">📞 Bizi Arayın</a>
                     </div>
                 </div>
                 <div class="hero-visual animate-fade-in-up">
@@ -1004,7 +1006,7 @@
         <div class="container">
             <h2>Bugün Dijitalleşin, Yarın Kazanın</h2>
             <p>Asansör yönetim süreçlerinizi dijitalleştirin ve rekabette öne geçin.</p>
-            <a href="https://wa.me/905455865551?text=Merhaba%2C%20Asans%C3%B6r%20Otomasyon%20sistemi%20hakk%C4%B1nda%20demo%20talep%20etmek%20istiyorum." target="_blank" rel="noopener" class="btn">Demo Talep Et</a>
+            <a href="https://wa.me/905448946894?text=Merhaba%2C%20Asans%C3%B6r%20Otomasyon%20sistemi%20hakk%C4%B1nda%20demo%20talep%20etmek%20istiyorum." target="_blank" rel="noopener" class="btn">Demo Talep Et</a>
         </div>
     </section>
 
@@ -1026,7 +1028,7 @@
                     <ul>
                         <li><a href="#features">Özellikler</a></li>
                         <li><a href="#modules">Modüller</a></li>
-                        <li><a href="https://wa.me/905455865551?text=Merhaba%2C%20Asans%C3%B6r%20Otomasyon%20sistemi%20hakk%C4%B1nda%20demo%20talep%20etmek%20istiyorum." target="_blank" rel="noopener">Demo Talep Et</a></li>
+                        <li><a href="https://wa.me/905448946894?text=Merhaba%2C%20Asans%C3%B6r%20Otomasyon%20sistemi%20hakk%C4%B1nda%20demo%20talep%20etmek%20istiyorum." target="_blank" rel="noopener">Demo Talep Et</a></li>
                     </ul>
                 </div>
 
@@ -1044,8 +1046,16 @@
                     <h3>İletişim</h3>
                     <ul>
                         <li>📧 <a href="mailto:info@harmansahyazilim.com">info@harmansahyazilim.com</a></li>
-                        <li>📞 <a href="tel:+905455865551">0545 586 55 51</a></li>
+                        <li>📞 <a href="tel:+905448946894">0544 894 68 94</a></li>
                         <li>📍 Sarıköprü, Ömer Halisdemir Küme Evler Teknopark, Kapı No:31 Daire No:B33, 51300 Niğde Merkez/Niğde</li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Mobil Uygulama</h3>
+                    <ul>
+                        <li><a href="https://apps.apple.com/tr/app/proaslift/id6759846797?l=tr" target="_blank" rel="noopener"> App Store'da İndir</a></li>
+                        <li><a href="https://play.google.com/store/apps/details?id=com.harmansah.asansor&pcampaignid=web_share" target="_blank" rel="noopener">▶ Google Play'de İndir</a></li>
                     </ul>
                 </div>
             </div>
