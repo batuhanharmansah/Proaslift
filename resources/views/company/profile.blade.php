@@ -29,9 +29,36 @@
         <div class="lg:col-span-2">
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
                 <h2 class="text-xl font-semibold text-gray-900 mb-4">Firma Bilgileri</h2>
-                <form action="{{ route('company.profile.update') }}" method="POST">
+                <form action="{{ route('company.profile.update') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PATCH')
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 pb-6 border-b border-gray-100">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Firma Logosu</label>
+                            @if($company->logo_path)
+                                <img src="{{ Storage::url($company->logo_path) }}" alt="Logo" class="h-16 mb-2 rounded-lg border border-gray-200">
+                            @endif
+                            <input type="file" name="logo" accept="image/*" class="w-full text-sm">
+                            <p class="text-xs text-gray-400 mt-1">Önerilen: kare, 512×512 px.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Kaşe / İmza</label>
+                            @if($company->stamp_path)
+                                <img src="{{ Storage::url($company->stamp_path) }}" alt="Kaşe" class="h-16 mb-2 rounded-lg border border-gray-200">
+                            @endif
+                            <input type="file" name="stamp" accept="image/*" class="w-full text-sm">
+                            <p class="text-xs text-gray-400 mt-1">Tekliflerde otomatik basılır. Önerilen: şeffaf PNG.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Birincil Marka Rengi</label>
+                            <input type="color" name="brand_primary_color" value="{{ old('brand_primary_color', $company->brand_primary_color ?? '#2563eb') }}" class="w-full h-10 rounded-lg border border-gray-300">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">İkincil Marka Rengi</label>
+                            <input type="color" name="brand_secondary_color" value="{{ old('brand_secondary_color', $company->brand_secondary_color ?? '#1d4ed8') }}" class="w-full h-10 rounded-lg border border-gray-300">
+                        </div>
+                    </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>

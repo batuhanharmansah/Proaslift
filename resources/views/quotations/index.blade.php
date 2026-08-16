@@ -92,7 +92,7 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-right font-semibold text-gray-900">
-                                {{ $quotation->currency }} {{ number_format($quotation->grand_total, 2) }}
+                                {{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($quotation->grand_total, 2) }}
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <a href="{{ route('quotations.show', $quotation) }}" class="text-primary-600 hover:text-primary-800 font-medium">Görüntüle</a>

@@ -6,25 +6,34 @@
 // eşleştirilmiş, maintenance_type='ariza_onarim') ve arızanın durumunu günceller
 // ('ekip_atandi' eğer personel atanmışsa, yoksa 'inceleniyor'). Bu, response'ta
 // 'maintenance_schedule_id' olarak doğrudan dönüyor — test bunu kontrol eder.
+//
+// TASARIM NOTU: Bina SADECE BİR KEZ, testin başında (setup()) oluşturulur —
+// (bkz. maintenance-test.js'teki aynı düzeltme: her iterasyonda yeni bina açmak
+// mobile-buildings-write throttle'ını (30/dk) gereksiz yere zorluyordu).
 
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { getSession, authHeaders, createLoadTestBuilding, uniqueName, BASE_URL } from './_helpers.js';
+import { login, authHeaders, createLoadTestBuilding, uniqueName, BASE_URL } from './_helpers.js';
 
 export const options = {
-  vus: 3,
+  vus: 2,
   duration: '30s',
 };
 
-export default function () {
-  const session = getSession();
-  if (!session) return;
+export function setup() {
+  const session = login();
+  if (!session) return null;
   const headers = authHeaders(session.token);
 
   const building = createLoadTestBuilding(headers);
-  if (!building) return;
+  if (!building) return null;
 
-  sleep(0.5);
+  return { token: session.token, buildingId: building.id };
+}
+
+export default function (data) {
+  if (!data) return;
+  const headers = authHeaders(data.token);
 
   // 1) Okuma: arıza listesi ve istatistikler (gerçek kullanımda en sık çağrılan)
   const listRes = http.get(`${BASE_URL}/api/mobile/issues`, { headers });
@@ -37,7 +46,7 @@ export default function () {
 
   // 2) Yazma: yeni arıza bildirimi (personel atamadan — 'bildirildi' durumu bekleniyor)
   const payload = JSON.stringify({
-    building_id: building.id,
+    building_id: data.buildingId,
     reported_by: uniqueName(),
     issue_type: 'mekanik_ariza',
     priority: 'orta',
@@ -66,18 +75,18 @@ export default function () {
 
   // 3) Oluşan bağlı bakım kaydının gerçekten var olduğunu ve doğru binaya bağlı olduğunu doğrula
   try {
-    const data = JSON.parse(createRes.body).data;
-    if (data.maintenance_schedule_id) {
+    const created = JSON.parse(createRes.body).data;
+    if (created.maintenance_schedule_id) {
       sleep(0.5);
       const maintenanceRes = http.get(
-        `${BASE_URL}/api/mobile/maintenance/${data.maintenance_schedule_id}`,
+        `${BASE_URL}/api/mobile/maintenance/${created.maintenance_schedule_id}`,
         { headers }
       );
       check(maintenanceRes, {
         'otomatik oluşan bakım kaydı erişilebilir': (r) => r.status === 200,
         'otomatik bakım doğru binaya bağlı': (r) => {
           try {
-            return JSON.parse(r.body).data.building.id === building.id;
+            return JSON.parse(r.body).data.building.id === data.buildingId;
           } catch {
             return false;
           }
@@ -88,5 +97,5 @@ export default function () {
     // create başarısızsa bu adımı atla
   }
 
-  sleep(1);
+  sleep(2);
 }

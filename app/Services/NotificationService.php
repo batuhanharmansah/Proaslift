@@ -8,6 +8,7 @@ use App\Models\MaintenanceSchedule;
 use App\Models\IssueReport;
 use App\Models\Receivable;
 use App\Models\Payable;
+use App\Models\NotificationPreference;
 use Carbon\Carbon;
 
 /**
@@ -42,6 +43,7 @@ class NotificationService
 
         $this->notifyUsers($users, $companyId, [
             'type' => 'maintenance',
+            'event_key' => 'maintenance_scheduled',
             'priority' => $this->mapPriorityToNotificationPriority($maintenance->priority),
             'title' => 'Yeni Bakım Planlandı',
             'body' => "{$building->name} için {$maintenance->maintenance_type_label} planlandı. Tarih: " . $maintenance->scheduled_date->format('d.m.Y'),
@@ -59,6 +61,7 @@ class NotificationService
             if ($employee && $employee->user_id) {
                 $this->notifyUsers(collect([$employee->user]), $companyId, [
                     'type' => 'employee',
+                    'event_key' => 'maintenance_assigned',
                     'priority' => $this->mapPriorityToNotificationPriority($maintenance->priority),
                     'title' => 'Yeni İş Atandı',
                     'body' => "{$building->name} için bakım işi size atandı. Tarih: " . $maintenance->scheduled_date->format('d.m.Y'),
@@ -94,6 +97,7 @@ class NotificationService
 
         $this->notifyUsers($users, $companyId, [
             'type' => 'maintenance',
+            'event_key' => 'maintenance_reminder',
             'priority' => 'high',
             'title' => 'Bakım Hatırlatması',
             'body' => "{$building->name} için yarın bakım planlandı. Tarih: " . $maintenance->scheduled_date->format('d.m.Y'),
@@ -111,6 +115,7 @@ class NotificationService
             if ($employee && $employee->user_id) {
                 $this->notifyUsers(collect([$employee->user]), $companyId, [
                     'type' => 'employee',
+                    'event_key' => 'maintenance_reminder',
                     'priority' => 'high',
                     'title' => 'Bakım Hatırlatması',
                     'body' => "{$building->name} için yarın bakım yapmanız gerekiyor. Tarih: " . $maintenance->scheduled_date->format('d.m.Y'),
@@ -136,6 +141,7 @@ class NotificationService
         // Admin kullanıcılarına bildirim gönder
         $this->notifyCompanyUsers($companyId, [
             'type' => 'maintenance',
+            'event_key' => 'maintenance_completed',
             'priority' => 'medium',
             'title' => 'Bakım Tamamlandı',
             'body' => "{$building->name} için {$maintenance->maintenance_type_label} tamamlandı.",
@@ -161,6 +167,7 @@ class NotificationService
         // Admin kullanıcılarına bildirim gönder
         $this->notifyCompanyUsers($companyId, [
             'type' => 'issue',
+            'event_key' => 'issue_reported',
             'priority' => $priority,
             'title' => $issue->is_urgent ? 'Acil Arıza Bildirimi' : 'Arıza Bildirimi',
             'body' => "{$building->name} için arıza bildirildi: {$issue->description}",
@@ -184,6 +191,7 @@ class NotificationService
 
         $this->notifyCompanyUsers($companyId, [
             'type' => 'financial',
+            'event_key' => 'payment_due_soon',
             'priority' => $daysUntilDue <= 1 ? 'critical' : 'high',
             'title' => 'Ödeme Vadesi Yaklaşıyor',
             'body' => "{$building->name} için {$receivable->total_amount} TL ödeme {$daysUntilDue} gün sonra vadesi dolacak.",
@@ -206,6 +214,7 @@ class NotificationService
 
         $this->notifyCompanyUsers($companyId, [
             'type' => 'financial',
+            'event_key' => 'payment_overdue',
             'priority' => 'critical',
             'title' => 'Ödeme Gecikti',
             'body' => "{$building->name} için {$receivable->total_amount} TL ödeme {$daysOverdue} gün gecikti.",
@@ -227,6 +236,7 @@ class NotificationService
 
         $this->notifyCompanyUsers($companyId, [
             'type' => 'financial',
+            'event_key' => 'payment_received',
             'priority' => 'medium',
             'title' => 'Ödeme Alındı',
             'body' => "{$building->name} için {$amount} TL ödeme alındı.",
@@ -248,6 +258,7 @@ class NotificationService
 
         $this->notifyCompanyUsers($companyId, [
             'type' => 'financial',
+            'event_key' => 'payable_due_soon',
             'priority' => $daysUntilDue <= 1 ? 'critical' : 'high',
             'title' => 'Borç Vadesi Yaklaşıyor',
             'body' => "{$payable->title} için {$payable->total_amount} TL borç {$daysUntilDue} gün sonra vadesi dolacak.",
@@ -304,10 +315,17 @@ class NotificationService
             ]);
         }
 
-        $this->pushNotificationService->sendToUsers($userIds, [
-            'title' => $data['title'],
-            'body' => $data['body'],
-            'data' => $data['data'] ?? [],
-        ]);
+        // Uygulama içi bildirim (zil) her zaman oluşturulur, kapatılamaz — yukarıda zaten yapıldı.
+        // Push bildirimi ise firma bu olay için kapatmış olabilir, göndermeden önce kontrol edilir.
+        $eventKey = $data['event_key'] ?? null;
+        $pushEnabled = !$eventKey || NotificationPreference::isEnabled($companyId, $eventKey, 'push');
+
+        if ($pushEnabled) {
+            $this->pushNotificationService->sendToUsers($userIds, [
+                'title' => $data['title'],
+                'body' => $data['body'],
+                'data' => $data['data'] ?? [],
+            ]);
+        }
     }
 }

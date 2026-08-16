@@ -56,8 +56,7 @@
                      x-transition:leave-end="transform opacity-0 scale-95"
                      class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 py-1 z-50">
 
-                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profilim</a>
-                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ayarlar</a>
+                    <a href="{{ route('employee.profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profilim</a>
 
                     <form method="POST" action="{{ route('logout') }}" class="block">
                         @csrf

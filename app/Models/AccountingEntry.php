@@ -27,6 +27,7 @@ class AccountingEntry extends Model
         'payment_method',
         'status',
         'notes',
+        'tag',
         'created_by'
     ];
 

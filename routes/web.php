@@ -23,6 +23,16 @@ use App\Http\Controllers\MaintenanceApprovalController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\PublicQuotationController;
 use App\Http\Controllers\SystemMonitorController;
+use App\Http\Controllers\ChecklistItemController;
+use App\Http\Controllers\BulkMaintenanceController;
+use App\Http\Controllers\RoutePlannerController;
+use App\Http\Controllers\NotificationPreferenceController;
+use App\Http\Controllers\CariController;
+use App\Http\Controllers\Portal\PortalAuthController;
+use App\Http\Controllers\Portal\PortalController;
+use App\Http\Controllers\CheckController;
+use App\Http\Controllers\ComplianceDocumentController;
+use App\Http\Controllers\HrFleetController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -68,6 +78,17 @@ Route::post('/teklif/onay/{token}', [PublicQuotationController::class, 'respond'
 
 // Dil değiştirme (EN/TR)
 Route::get('/locale/{locale}', [LocaleController::class, 'set'])->name('locale.set');
+
+// Müşteri Portalı — ana auth sisteminden bağımsız, izole giriş akışı
+Route::prefix('portal')->name('portal.')->group(function () {
+    Route::get('/giris', [PortalAuthController::class, 'showLogin'])->name('login');
+    Route::post('/giris', [PortalAuthController::class, 'login'])->middleware('throttle:10,1')->name('login.submit');
+    Route::post('/cikis', [PortalAuthController::class, 'logout'])->name('logout');
+
+    Route::middleware('portal.auth')->group(function () {
+        Route::get('/', [PortalController::class, 'dashboard'])->name('dashboard');
+    });
+});
 
 // SUPER ADMIN ROUTES
 Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
@@ -131,6 +152,10 @@ Route::middleware(['auth', 'role:employee', 'company.active'])->prefix('employee
     Route::post('/maintenance/{maintenance}/detailed-store', [DetailedMaintenanceController::class, 'store'])->name('maintenance.detailed-store');
     Route::put('/maintenance/{maintenance}/detailed-update', [DetailedMaintenanceController::class, 'update'])->name('maintenance.detailed-update');
     Route::get('/maintenance/{maintenance}/detailed-report', [DetailedMaintenanceController::class, 'show'])->name('maintenance.detailed-report');
+
+    // Kendi profilim (maaş/pozisyon dahil değil)
+    Route::get('/profile', [EmployeeController::class, 'selfProfile'])->name('profile');
+    Route::patch('/profile', [EmployeeController::class, 'updateSelfProfile'])->name('profile.update');
 });
 
 // COMPANY ROUTES (Asansör firması)
@@ -140,6 +165,8 @@ Route::middleware(['auth', 'role:company_admin', 'company.active', 'company.scop
 
     // Bina yönetimi
     Route::resource('binalar', BuildingController::class)->names('buildings');
+    Route::post('binalar/{building}/portal-ac', [BuildingController::class, 'enablePortal'])->name('buildings.portal.enable');
+    Route::post('binalar/{building}/portal-kapat', [BuildingController::class, 'disablePortal'])->name('buildings.portal.disable');
 
     // Payment Receipts (specific routes first)
     Route::post('building-documents/mark-as-paid', [BuildingDocumentController::class, 'markAsPaid'])->name('building.documents.mark-as-paid');
@@ -192,6 +219,7 @@ Route::middleware(['auth', 'role:company_admin', 'company.active', 'company.scop
     Route::get('finansal/gun-sonu/pdf', [FinancialController::class, 'dayEndExportPdf'])->name('financial.day-end.pdf');
     Route::get('finansal/gecmis', [FinancialController::class, 'history'])->name('financial.history');
     Route::get('finansal/rapor', [FinancialController::class, 'report'])->name('financial.report');
+    Route::get('finansal/kar-maliyet-raporu', [FinancialController::class, 'karMaliyetRaporu'])->name('financial.kar-maliyet');
     Route::get('finansal', [FinancialController::class, 'index'])->name('financial.index');
     Route::post('finansal/quick-transaction', [FinancialController::class, 'quickTransaction'])->name('financial.quick-transaction');
     Route::post('finansal/add-account', [FinancialController::class, 'addAccount'])->name('financial.add-account');
@@ -268,6 +296,58 @@ Route::middleware(['auth', 'role:company_admin', 'company.active', 'company.scop
     // Firma profil
     Route::get('/company-profile', [CompanyController::class, 'profile'])->name('company.profile');
     Route::patch('/company-profile', [CompanyController::class, 'updateProfile'])->name('company.profile.update');
+
+    // Bakım kontrol listesi - firma özel maddeler
+    Route::get('/settings/checklist-items', [ChecklistItemController::class, 'index'])->name('settings.checklist-items');
+    Route::post('/settings/checklist-items', [ChecklistItemController::class, 'store'])->name('settings.checklist-items.store');
+    Route::delete('/settings/checklist-items/{checklistItem}', [ChecklistItemController::class, 'destroy'])->name('settings.checklist-items.destroy');
+
+    // Aylık Toplu Bakım Sihirbazı
+    Route::prefix('bakim/toplu')->name('maintenance.bulk.')->group(function () {
+        Route::get('/', [BulkMaintenanceController::class, 'create'])->name('create');
+        Route::post('/onizle', [BulkMaintenanceController::class, 'preview'])->name('preview');
+        Route::post('/olustur', [BulkMaintenanceController::class, 'store'])->name('store');
+    });
+
+    // Rota Planlayıcı
+    Route::prefix('bakim/rota-planlayici')->name('maintenance.route-planner.')->group(function () {
+        Route::get('/', [RoutePlannerController::class, 'index'])->name('index');
+        Route::get('/binalar', [RoutePlannerController::class, 'buildings'])->name('buildings');
+    });
+
+    // Bildirim Tercihleri
+    Route::get('/settings/bildirim-tercihleri', [NotificationPreferenceController::class, 'index'])->name('settings.notification-preferences');
+    Route::post('/settings/bildirim-tercihleri', [NotificationPreferenceController::class, 'update'])->name('settings.notification-preferences.update');
+
+    // Cariler (birleşik müşteri/tedarikçi/personel bakiye görünümü)
+    Route::get('/cariler', [CariController::class, 'index'])->name('cariler.index');
+
+    // Çek & Senet
+    Route::prefix('cek-senet')->name('checks.')->group(function () {
+        Route::get('/', [CheckController::class, 'index'])->name('index');
+        Route::post('/', [CheckController::class, 'store'])->name('store');
+        Route::patch('/{check}', [CheckController::class, 'updateStatus'])->name('update-status');
+        Route::delete('/{check}', [CheckController::class, 'destroy'])->name('destroy');
+    });
+
+    // DTR + Kurtarma Formu
+    Route::prefix('belgeler/{type}')->name('compliance-documents.')->group(function () {
+        Route::get('/', [ComplianceDocumentController::class, 'index'])->name('index');
+        Route::post('/', [ComplianceDocumentController::class, 'store'])->name('store');
+    });
+    Route::patch('/belgeler/kayit/{complianceDocument}', [ComplianceDocumentController::class, 'updateStatus'])->name('compliance-documents.update-status');
+    Route::delete('/belgeler/kayit/{complianceDocument}', [ComplianceDocumentController::class, 'destroy'])->name('compliance-documents.destroy');
+
+    // Hakediş + Araç Takip + Devamsızlık
+    Route::prefix('hakedis-arac-takip')->name('hr-fleet.')->group(function () {
+        Route::get('/', [HrFleetController::class, 'index'])->name('index');
+        Route::post('/hakedis', [HrFleetController::class, 'storeBonus'])->name('bonus.store');
+        Route::delete('/hakedis/{bonus}', [HrFleetController::class, 'destroyBonus'])->name('bonus.destroy');
+        Route::post('/arac', [HrFleetController::class, 'storeVehicle'])->name('vehicle.store');
+        Route::delete('/arac/{vehicle}', [HrFleetController::class, 'destroyVehicle'])->name('vehicle.destroy');
+        Route::post('/devamsizlik', [HrFleetController::class, 'storeAbsence'])->name('absence.store');
+        Route::delete('/devamsizlik/{absence}', [HrFleetController::class, 'destroyAbsence'])->name('absence.destroy');
+    });
 
     // Çalışan profil
     Route::get('/employees/{employee}/profile', [EmployeeController::class, 'profile'])->name('employees.profile');

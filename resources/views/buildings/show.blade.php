@@ -124,7 +124,7 @@
                             {{ $data['status'] === 'paid' ? 'bg-green-50 border-green-200 hover:bg-green-100' : 'bg-red-50 border-red-200 hover:bg-red-100' }}"
                             onclick="openPaymentModal({{ $building->id }}, {{ now()->year }}, {{ $month }}, '{{ $data['month_name'] }}', {{ $data['expected'] }}, {{ $data['has_receipt'] ? 'true' : 'false' }})">
                             <div class="text-sm font-medium text-gray-900 mb-1">{{ $data['month_name'] }}</div>
-                            <div class="text-xs text-gray-600 mb-2">{{ $month }}/2025</div>
+                            <div class="text-xs text-gray-600 mb-2">{{ $month }}/{{ now()->year }}</div>
                             @if($data['status'] === 'paid')
                                 <div class="text-green-600 font-semibold text-sm">₺{{ number_format($data['amount'], 2) }}</div>
                                 <div class="text-xs text-green-500">✓ Ödendi</div>

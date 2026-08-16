@@ -216,6 +216,7 @@ class FinancialController extends Controller
             'account_id' => ['required', Rule::exists('account_types', 'id')->where('company_id', $companyId)],
             'target_account_id' => ['nullable', Rule::exists('account_types', 'id')->where('company_id', $companyId)],
             'building_id' => 'nullable|exists:buildings,id',
+            'tag' => 'nullable|string|max:50',
         ]);
 
         $validator->after(function ($v) use ($request) {
@@ -249,6 +250,7 @@ class FinancialController extends Controller
                 'transaction_date' => now('Europe/Istanbul')->format('Y-m-d'),
                 'created_by' => auth()->id(),
                 'payment_method' => $request->payment_method ?? 'nakit', // Varsayılan ödeme yöntemi
+                'tag' => $request->tag ?: null,
             ];
 
             \Log::info('Quick Transaction - Initial Data:', $data);
@@ -1118,6 +1120,10 @@ class FinancialController extends Controller
     {
         $labels = [
             'bina_geliri' => 'Bina Geliri',
+            'bakim_geliri' => 'Bakım Geliri',
+            'yedek_parca' => 'Yedek Parça',
+            'personel_maas' => 'Personel Maaş',
+            'yakıt' => 'Yakıt',
             'elektrik' => 'Elektrik',
             'su' => 'Su',
             'dogalgaz' => 'Doğalgaz',
@@ -1189,8 +1195,79 @@ class FinancialController extends Controller
                 return $row;
             });
 
+        // Bu ay etiket bazlı gelir/gider kırılımı (Elevatora.com karşılaştırması Özellik E4)
+        $tagStats = AccountingEntry::where('company_id', $companyId)
+            ->whereBetween('transaction_date', [$currentStart, $currentEnd])
+            ->whereNotNull('tag')
+            ->where('tag', '!=', '')
+            ->selectRaw('type as transaction_type, tag, SUM(total_amount) as total')
+            ->groupBy('type', 'tag')
+            ->orderByDesc('total')
+            ->get();
+
         return view('financial.report', compact(
-            'monthlyStats', 'accounts', 'categoryStats'
+            'monthlyStats', 'accounts', 'categoryStats', 'tagStats'
+        ));
+    }
+
+    /**
+     * Kâr / Maliyet Raporu — Elevatora.com karşılaştırması Özellik E9.
+     * Net satış - maliyet ayrımını, maliyet dağılımını (personel vs diğer)
+     * ve son 6 ayın trendini gösteren ayrı bir sayfa.
+     */
+    public function karMaliyetRaporu(Request $request)
+    {
+        $companyId = auth()->user()->company_id;
+
+        $currentStart = now('Europe/Istanbul')->startOfMonth();
+        $currentEnd = now('Europe/Istanbul')->endOfMonth();
+
+        $currentIncome = (float) AccountingEntry::where('company_id', $companyId)
+            ->where('type', 'gelir')
+            ->whereBetween('transaction_date', [$currentStart, $currentEnd])
+            ->sum('total_amount');
+
+        $expenseQuery = AccountingEntry::where('company_id', $companyId)
+            ->where('type', 'gider')
+            ->whereBetween('transaction_date', [$currentStart, $currentEnd]);
+
+        $currentExpenseTotal = (float) (clone $expenseQuery)->sum('total_amount');
+
+        $personnelCost = (float) (clone $expenseQuery)
+            ->whereIn('category', ['maas', 'personel_maasi'])
+            ->sum('total_amount');
+
+        $otherCost = $currentExpenseTotal - $personnelCost;
+
+        $currentProfit = $currentIncome - $currentExpenseTotal;
+        $marginPercent = $currentIncome > 0 ? round(($currentProfit / $currentIncome) * 100, 1) : 0;
+
+        // Son 6 ay trendi
+        $monthlyTrend = collect(range(5, 0))->map(function ($monthsAgo) use ($companyId) {
+            $start = now('Europe/Istanbul')->subMonths($monthsAgo)->startOfMonth();
+            $end = now('Europe/Istanbul')->subMonths($monthsAgo)->endOfMonth();
+
+            $income = (float) AccountingEntry::where('company_id', $companyId)
+                ->where('type', 'gelir')
+                ->whereBetween('transaction_date', [$start, $end])
+                ->sum('total_amount');
+
+            $expense = (float) AccountingEntry::where('company_id', $companyId)
+                ->where('type', 'gider')
+                ->whereBetween('transaction_date', [$start, $end])
+                ->sum('total_amount');
+
+            return [
+                'label' => $start->translatedFormat('M Y'),
+                'income' => $income,
+                'expense' => $expense,
+                'profit' => $income - $expense,
+            ];
+        });
+
+        return view('financial.kar-maliyet', compact(
+            'currentIncome', 'currentExpenseTotal', 'personnelCost', 'otherCost',
+            'currentProfit', 'marginPercent', 'monthlyTrend'
         ));
     }
 

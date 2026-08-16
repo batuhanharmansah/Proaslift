@@ -27,6 +27,10 @@ class Company extends Model
         'max_employees',
         'is_active',
         'notes',
+        'logo_path',
+        'stamp_path',
+        'brand_primary_color',
+        'brand_secondary_color',
     ];
 
     protected $casts = [

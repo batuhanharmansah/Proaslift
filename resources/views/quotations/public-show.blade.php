@@ -26,7 +26,7 @@
                 <div class="text-right">
                     <div class="text-sm text-gray-500">Geçerlilik</div>
                     <div class="font-semibold">{{ $quotation->valid_until?->format('d.m.Y') }}</div>
-                    <div class="text-2xl font-bold text-primary-600 mt-3">{{ $quotation->currency }} {{ number_format($quotation->grand_total, 2) }}</div>
+                    <div class="text-2xl font-bold text-primary-600 mt-3">{{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($quotation->grand_total, 2) }}</div>
                 </div>
             </div>
 
@@ -50,7 +50,7 @@
                             <tr>
                                 <td class="px-4 py-3">{{ $item->description }}</td>
                                 <td class="px-4 py-3 text-right">{{ number_format($item->quantity, 2) }} {{ $item->unit }}</td>
-                                <td class="px-4 py-3 text-right font-semibold">{{ $quotation->currency }} {{ number_format($item->line_total, 2) }}</td>
+                                <td class="px-4 py-3 text-right font-semibold">{{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($item->line_total, 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>

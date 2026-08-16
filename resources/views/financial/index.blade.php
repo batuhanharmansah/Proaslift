@@ -23,6 +23,9 @@
                 <a href="{{ route('reports.financial') }}" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                     📊 Raporlar
                 </a>
+                <a href="{{ route('financial.kar-maliyet') }}" class="bg-purple-100 hover:bg-purple-200 text-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    📈 Kâr / Maliyet Raporu
+                </a>
             </div>
         </div>
     </div>
@@ -245,6 +248,14 @@
                         <input type="text" id="description" required
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                                placeholder="İşlem açıklaması">
+                    </div>
+
+                    <!-- Etiket (serbest, Kasa raporunda kırılım için) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Etiket (opsiyonel)</label>
+                        <input type="text" id="tag" maxlength="50"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                               placeholder="Yakıt, Kira, Malzeme...">
                     </div>
 
                     <!-- Gönder Butonu -->
@@ -518,6 +529,7 @@ if (quickTransactionForm) {
             account_id: document.getElementById('accountId')?.value || '',
             target_account_id: document.getElementById('targetAccountId')?.value || '',
             building_id: document.getElementById('buildingId')?.value || '',
+            tag: document.getElementById('tag')?.value || '',
             _token: document.querySelector('input[name="_token"]')?.value || ''
         };
 

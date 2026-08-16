@@ -90,18 +90,18 @@
                     <tr>
                         <td>{{ $item->description }}</td>
                         <td class="right">{{ number_format($item->quantity, 2) }} {{ $item->unit }}</td>
-                        <td class="right">{{ $quotation->currency }} {{ number_format($item->unit_price, 2) }}</td>
-                        <td class="right">{{ $quotation->currency }} {{ number_format($item->vat_amount, 2) }}</td>
-                        <td class="right">{{ $quotation->currency }} {{ number_format($item->line_total, 2) }}</td>
+                        <td class="right">{{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($item->unit_price, 2) }}</td>
+                        <td class="right">{{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($item->vat_amount, 2) }}</td>
+                        <td class="right">{{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($item->line_total, 2) }}</td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
         <table class="totals">
-            <tr><td>Ara Toplam</td><td class="right">{{ $quotation->currency }} {{ number_format($quotation->subtotal, 2) }}</td></tr>
-            <tr><td>İndirim</td><td class="right">{{ $quotation->currency }} {{ number_format($quotation->discount_total, 2) }}</td></tr>
-            <tr><td>KDV</td><td class="right">{{ $quotation->currency }} {{ number_format($quotation->vat_total, 2) }}</td></tr>
-            <tr class="grand"><td>Genel Toplam</td><td class="right">{{ $quotation->currency }} {{ number_format($quotation->grand_total, 2) }}</td></tr>
+            <tr><td>Ara Toplam</td><td class="right">{{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($quotation->subtotal, 2) }}</td></tr>
+            <tr><td>İndirim</td><td class="right">{{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($quotation->discount_total, 2) }}</td></tr>
+            <tr><td>KDV</td><td class="right">{{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($quotation->vat_total, 2) }}</td></tr>
+            <tr class="grand"><td>Genel Toplam</td><td class="right">{{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($quotation->grand_total, 2) }}</td></tr>
         </table>
     </div>
 

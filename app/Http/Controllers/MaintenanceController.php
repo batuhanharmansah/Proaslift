@@ -35,6 +35,10 @@ class MaintenanceController extends Controller
             $query->where('building_id', $request->building_id);
         }
 
+        if ($request->has('employee_id') && $request->employee_id) {
+            $query->where('assigned_employee_id', $request->employee_id);
+        }
+
         $maintenances = $query->orderBy('scheduled_date', 'asc')->paginate(10);
         $buildings = Building::where('status', 'aktif')->get();
 

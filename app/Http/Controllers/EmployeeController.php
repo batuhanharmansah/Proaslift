@@ -231,4 +231,47 @@ class EmployeeController extends Controller
         return redirect()->route('employees.profile', $employee)->with('success', 'Çalışan bilgileri başarıyla güncellendi.');
     }
 
+    public function selfProfile()
+    {
+        $employee = auth()->user()->employee;
+
+        if (!$employee) {
+            abort(404, 'Personel kaydınız bulunamadı.');
+        }
+
+        return view('employee.profile', compact('employee'));
+    }
+
+    public function updateSelfProfile(Request $request)
+    {
+        $employee = auth()->user()->employee;
+
+        if (!$employee) {
+            abort(404, 'Personel kaydınız bulunamadı.');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'email' => [
+                'required',
+                'email',
+                'unique:employees,email,' . $employee->id,
+                'unique:users,email,' . optional($employee->user)->id,
+            ],
+            'address' => 'required|string',
+            'notes' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        // Maaş ve pozisyon kasıtlı olarak dahil edilmiyor — çalışan kendi maaşını/pozisyonunu değiştiremez.
+        $employee->update($request->only(['first_name', 'last_name', 'phone', 'email', 'address', 'notes']));
+
+        return redirect()->route('employee.profile')->with('success', 'Bilgileriniz başarıyla güncellendi.');
+    }
+
 }

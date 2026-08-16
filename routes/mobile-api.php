@@ -28,6 +28,8 @@ use App\Http\Controllers\Api\Mobile\FinancialController;
 use App\Http\Controllers\Api\Mobile\NotificationController;
 use App\Http\Controllers\Api\Mobile\ElevatorLabelController;
 use App\Http\Controllers\Api\Mobile\MonitoringController;
+use App\Http\Controllers\Api\Mobile\ProductController;
+use App\Http\Controllers\Api\Mobile\ParityController;
 use App\Http\Controllers\Api\LocationMapController;
 use App\Http\Controllers\Api\EmployeeController as LegacyEmployeeController;
 
@@ -101,6 +103,8 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
         // Yazma: 30/dk
         Route::middleware('throttle:30,1,mobile-buildings-write')->group(function () {
             Route::post('/', [BuildingController::class, 'store']);
+            Route::put('/{id}', [BuildingController::class, 'update']);
+            Route::delete('/{id}', [BuildingController::class, 'destroy']);
             Route::post('/search-qr', [BuildingController::class, 'searchByQR']);
         });
     });
@@ -128,6 +132,7 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
             Route::get('/', [MaintenanceController::class, 'index']);
             Route::get('/calendar', [MaintenanceController::class, 'getCalendar']);
             Route::get('/products', [MaintenanceController::class, 'products']);
+            Route::get('/checklist-items', [MaintenanceController::class, 'checklistItems']);
             Route::get('/{id}/report/download', [MaintenanceController::class, 'downloadReport']);
             Route::get('/{id}', [MaintenanceController::class, 'show']);
         });
@@ -219,6 +224,10 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
 
     // ==================== REPORTS ROUTES (GET: 60/dk — ağır sorgular) ====================
     Route::prefix('reports')->middleware('throttle:60,1,mobile-reports-read')->group(function () {
+        Route::get('/hub', [ParityController::class, 'reportsHub']);
+        Route::get('/financial', [ParityController::class, 'reportsFinancial']);
+        Route::get('/maintenance', [ParityController::class, 'reportsMaintenance']);
+        Route::get('/employee', [ParityController::class, 'reportsEmployee']);
         Route::get('/summary', function (Request $request) {
             try {
                 $companyId = $request->user()->company_id;
@@ -261,6 +270,37 @@ Route::prefix('mobile')->middleware(['auth:sanctum'])->group(function () {
             Route::post('/{id}/seal', [ElevatorLabelController::class, 'seal']);
             Route::post('/{id}/cancel', [ElevatorLabelController::class, 'cancel']);
         });
+    });
+
+    // ==================== PRODUCTS / DEPO ROUTES ====================
+    Route::prefix('products')->group(function () {
+        Route::middleware('throttle:120,1,mobile-products-read')->group(function () {
+            Route::get('/', [ProductController::class, 'index']);
+            Route::get('/{id}', [ProductController::class, 'show']);
+        });
+        Route::middleware('throttle:30,1,mobile-products-write')->group(function () {
+            Route::post('/', [ProductController::class, 'store']);
+            Route::put('/{id}', [ProductController::class, 'update']);
+            Route::delete('/{id}', [ProductController::class, 'destroy']);
+        });
+    });
+
+    // ==================== WEB PARITY MODULES ====================
+    Route::middleware('throttle:120,1,mobile-parity-read')->group(function () {
+        Route::get('/quotations', [ParityController::class, 'quotations']);
+        Route::get('/quotations/{id}', [ParityController::class, 'quotationShow']);
+        Route::get('/checks', [ParityController::class, 'checks']);
+        Route::get('/compliance', [ParityController::class, 'compliance']);
+        Route::get('/hr-fleet', [ParityController::class, 'hrFleet']);
+        Route::get('/checklist-settings', [ParityController::class, 'checklistSettings']);
+        Route::get('/guide', [ParityController::class, 'guide']);
+        Route::get('/route-planner', [ParityController::class, 'routePlanner']);
+        Route::post('/bulk-maintenance/preview', [ParityController::class, 'bulkMaintenancePreview']);
+    });
+    Route::middleware('throttle:30,1,mobile-parity-write')->group(function () {
+        Route::post('/checklist-settings', [ParityController::class, 'storeChecklistItem']);
+        Route::delete('/checklist-settings/{id}', [ParityController::class, 'destroyChecklistItem']);
+        Route::post('/bulk-maintenance', [ParityController::class, 'bulkMaintenanceStore']);
     });
 
     // ==================== LOCATION TRACKING ROUTES ====================

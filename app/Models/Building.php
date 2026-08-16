@@ -25,6 +25,7 @@ class Building extends Model
         'installation_year',
         'contract_type',
         'monthly_fee',
+        'fee_per_elevator',
         'contract_start_date',
         'contract_end_date',
         'status',
@@ -41,13 +42,15 @@ class Building extends Model
         'responsible_phone',
         'responsible_email',
         'operational_status',
-        'elevator_notes'
+        'elevator_notes',
+        'default_employee_id',
     ];
 
     protected $casts = [
         'contract_start_date' => 'date',
         'contract_end_date' => 'date',
         'monthly_fee' => 'decimal:2',
+        'fee_per_elevator' => 'decimal:2',
         'floor_count' => 'integer',
         'elevator_count' => 'integer',
         'installation_year' => 'integer',
@@ -95,6 +98,16 @@ class Building extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function defaultEmployee()
+    {
+        return $this->belongsTo(Employee::class, 'default_employee_id');
+    }
+
+    public function receivables()
+    {
+        return $this->hasMany(Receivable::class);
     }
 
     public function contacts()

@@ -118,9 +118,15 @@
                     <h2 class="text-xl font-semibold text-gray-900 mb-4 mt-8">Tedarikçi Bilgileri</h2>
                 </div>
 
-                <div class="md:col-span-2">
+                <div>
                     <label for="supplier" class="block text-sm font-medium text-gray-700 mb-2">Tedarikçi</label>
                     <input type="text" id="supplier" name="supplier" value="{{ old('supplier', $product->supplier) }}"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                </div>
+
+                <div>
+                    <label for="location" class="block text-sm font-medium text-gray-700 mb-2">Depo Lokasyonu</label>
+                    <input type="text" id="location" name="location" value="{{ old('location', $product->location) }}" placeholder="Raf A-3, Merkez Depo vb."
                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
                 </div>
 

@@ -66,6 +66,10 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Tedarikçi</label>
                         <p class="text-gray-900">{{ $product->supplier ?: 'Belirtilmemiş' }}</p>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Depo Lokasyonu</label>
+                        <p class="text-gray-900">{{ $product->location ?: 'Belirtilmemiş' }}</p>
+                    </div>
                 </div>
             </div>
 

@@ -226,6 +226,28 @@
                 </div>
 
                 <div>
+                    <label for="fee_per_elevator" class="block text-sm font-medium text-gray-700 mb-2">Asansör Başına Ücret (₺) — opsiyonel</label>
+                    <input type="number" id="fee_per_elevator" name="fee_per_elevator" value="{{ old('fee_per_elevator', $building->fee_per_elevator) }}" min="0" step="0.01"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                           oninput="document.getElementById('monthly_fee').value = (parseFloat(this.value || 0) * parseInt(document.getElementById('elevator_count').value || 1)).toFixed(2)">
+                    <p class="text-xs text-gray-400 mt-1">Doldurulursa, "Aylık Ücret" otomatik olarak (asansör sayısı × bu tutar) hesaplanır. Birden fazla asansörü olan binalar için.</p>
+                </div>
+
+                <div>
+                    <label for="default_employee_id" class="block text-sm font-medium text-gray-700 mb-2">Varsayılan Teknisyen</label>
+                    <select id="default_employee_id" name="default_employee_id"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">— Seçilmedi —</option>
+                        @foreach($employees as $emp)
+                            <option value="{{ $emp->id }}" {{ old('default_employee_id', $building->default_employee_id) == $emp->id ? 'selected' : '' }}>
+                                {{ $emp->first_name }} {{ $emp->last_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="text-xs text-gray-400 mt-1">Toplu bakım oluştururken bu bina için otomatik atanır.</p>
+                </div>
+
+                <div>
                     <label for="contract_start_date" class="block text-sm font-medium text-gray-700 mb-2">Başlangıç Tarihi *</label>
                     <input type="date" id="contract_start_date" name="contract_start_date" value="{{ old('contract_start_date', $building->contract_start_date->format('Y-m-d')) }}" required
                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
@@ -249,6 +271,45 @@
                 </button>
             </div>
         </form>
+
+        <!-- Müşteri Portalı Erişimi -->
+        <div class="mt-8 pt-8 border-t border-gray-200">
+            <h2 class="text-xl font-bold text-gray-900 mb-2">Müşteri Portalı Erişimi</h2>
+            <p class="text-sm text-gray-500 mb-4">Bina yöneticisi/sahibi kendi bakım geçmişini, açık arızalarını ve ödeme durumunu görebileceği ayrı bir panele giriş yapabilir.</p>
+
+            @if($portalAccount)
+                <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-4 text-sm text-green-800">
+                    Portal erişimi aktif. Giriş telefonu: <strong>{{ $portalAccount->phone }}</strong>
+                    @if($portalAccount->last_login_at)
+                        · Son giriş: {{ $portalAccount->last_login_at->format('d.m.Y H:i') }}
+                    @endif
+                </div>
+                <form method="POST" action="{{ route('buildings.portal.disable', $building) }}" class="inline"
+                      onsubmit="return confirm('Portal erişimini kaldırmak istediğinize emin misiniz?');">
+                    @csrf
+                    <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium">Portal Erişimini Kaldır</button>
+                </form>
+            @endif
+
+            <form method="POST" action="{{ route('buildings.portal.enable', $building) }}" class="grid grid-cols-2 gap-4 mt-4">
+                @csrf
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Telefon (Giriş için)</label>
+                    <input type="text" name="portal_phone" placeholder="05XX XXX XX XX" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Şifre (en az 8 karakter)</label>
+                    <input type="password" name="portal_password" minlength="8" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                </div>
+                <div class="col-span-2">
+                    <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-6 rounded-xl transition duration-200">
+                        {{ $portalAccount ? 'Şifreyi/Telefonu Güncelle' : 'Portal Erişimi Oluştur' }}
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 

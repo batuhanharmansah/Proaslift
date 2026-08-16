@@ -34,13 +34,30 @@ class CompanyController extends Controller
             'address' => 'required|string|max:500',
             'tax_number' => 'nullable|string|max:50',
             'notes' => 'nullable|string|max:1000',
+            'logo' => 'nullable|image|max:5120',
+            'stamp' => 'nullable|image|max:5120',
+            'brand_primary_color' => 'nullable|string|max:7',
+            'brand_secondary_color' => 'nullable|string|max:7',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $company->update($request->only(['name', 'email', 'phone', 'address', 'tax_number', 'notes']));
+        $data = $request->only([
+            'name', 'email', 'phone', 'address', 'tax_number', 'notes',
+            'brand_primary_color', 'brand_secondary_color',
+        ]);
+
+        if ($request->hasFile('logo')) {
+            $data['logo_path'] = $request->file('logo')->store('company-branding', 'public');
+        }
+
+        if ($request->hasFile('stamp')) {
+            $data['stamp_path'] = $request->file('stamp')->store('company-branding', 'public');
+        }
+
+        $company->update($data);
 
         return redirect()->route('company.profile')->with('success', 'Firma bilgileri başarıyla güncellendi.');
     }

@@ -72,5 +72,6 @@ class Kernel extends HttpKernel
         'company.active' => \App\Http\Middleware\CompanyActiveMiddleware::class,
         'company.scope' => \App\Http\Middleware\CompanyScopeMiddleware::class,
         'system.monitor' => \App\Http\Middleware\SystemMonitorMiddleware::class,
+        'portal.auth' => \App\Http\Middleware\EnsurePortalAuth::class,
     ];
 }

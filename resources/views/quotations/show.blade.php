@@ -99,9 +99,9 @@
                                         <div class="text-xs text-gray-500">{{ $item->category_label }}</div>
                                     </td>
                                     <td class="px-4 py-3 text-right">{{ number_format($item->quantity, 2) }} {{ $item->unit }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $quotation->currency }} {{ number_format($item->unit_price, 2) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($item->unit_price, 2) }}</td>
                                     <td class="px-4 py-3 text-right">%{{ number_format($item->vat_rate, 0) }}</td>
-                                    <td class="px-4 py-3 text-right font-semibold">{{ $quotation->currency }} {{ number_format($item->line_total, 2) }}</td>
+                                    <td class="px-4 py-3 text-right font-semibold">{{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($item->line_total, 2) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -109,10 +109,10 @@
                 </div>
                 <div class="mt-6 flex justify-end">
                     <div class="w-full max-w-sm space-y-2 text-sm">
-                        <div class="flex justify-between"><span>Ara Toplam</span><span>{{ $quotation->currency }} {{ number_format($quotation->subtotal, 2) }}</span></div>
-                        <div class="flex justify-between"><span>İndirim</span><span>{{ $quotation->currency }} {{ number_format($quotation->discount_total, 2) }}</span></div>
-                        <div class="flex justify-between"><span>KDV</span><span>{{ $quotation->currency }} {{ number_format($quotation->vat_total, 2) }}</span></div>
-                        <div class="flex justify-between text-lg font-bold border-t pt-2"><span>Genel Toplam</span><span>{{ $quotation->currency }} {{ number_format($quotation->grand_total, 2) }}</span></div>
+                        <div class="flex justify-between"><span>Ara Toplam</span><span>{{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($quotation->subtotal, 2) }}</span></div>
+                        <div class="flex justify-between"><span>İndirim</span><span>{{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($quotation->discount_total, 2) }}</span></div>
+                        <div class="flex justify-between"><span>KDV</span><span>{{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($quotation->vat_total, 2) }}</span></div>
+                        <div class="flex justify-between text-lg font-bold border-t pt-2"><span>Genel Toplam</span><span>{{ $quotation->currency === 'TRY' ? '₺' : $quotation->currency }} {{ number_format($quotation->grand_total, 2) }}</span></div>
                     </div>
                 </div>
             </div>

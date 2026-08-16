@@ -42,11 +42,16 @@ class PushNotificationService
             return;
         }
 
-        $tokens = MobileDeviceToken::query()
-            ->whereIn('user_id', array_values(array_unique($userIds)))
-            ->where('is_active', true)
-            ->pluck('token')
-            ->all();
+        try {
+            $tokens = MobileDeviceToken::query()
+                ->whereIn('user_id', array_values(array_unique($userIds)))
+                ->where('is_active', true)
+                ->pluck('token')
+                ->all();
+        } catch (\Throwable $e) {
+            Log::error('Push bildirimi için cihaz token\'ları okunamadı: ' . $e->getMessage());
+            return;
+        }
 
         if (empty($tokens)) {
             return;

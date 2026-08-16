@@ -258,6 +258,88 @@ class BuildingController extends Controller
         }
     }
 
+    public function update(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'address' => 'required|string',
+            'district' => 'required|string|max:100',
+            'city' => 'required|string|max:100',
+            'floor_count' => 'required|integer|min:1',
+            'elevator_count' => 'required|integer|min:1',
+            'elevator_type' => 'required|in:yolcu,yuk,hasta,karma',
+            'contract_type' => 'required|in:bakim,onarim,modernizasyon',
+            'monthly_fee' => 'required|numeric|min:0',
+            'contract_start_date' => 'required|date',
+            'contract_end_date' => 'required|date|after:contract_start_date',
+            'elevator_code' => 'nullable|string|max:255',
+            'capacity_kg' => 'nullable|integer|min:0',
+            'capacity_person' => 'nullable|integer|min:0',
+            'responsible_person' => 'nullable|string|max:255',
+            'responsible_phone' => 'nullable|string|max:255',
+            'responsible_email' => 'nullable|email|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Doğrulama hatası',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $user = $request->user();
+        $companyId = $user->company_id;
+        if (!$companyId) {
+            $employee = $user->employee ?? Employee::where('email', $user->email)->first();
+            $companyId = $employee?->company_id;
+        }
+        if (!$companyId) {
+            return response()->json(['success' => false, 'message' => 'Firma bilgisi bulunamadı'], 403);
+        }
+
+        $building = Building::where('company_id', $companyId)->findOrFail($id);
+        $feeChanged = (float) $building->monthly_fee !== (float) $request->monthly_fee;
+
+        $building->update($request->only([
+            'name', 'address', 'district', 'city', 'floor_count', 'elevator_count',
+            'elevator_type', 'contract_type', 'monthly_fee', 'contract_start_date', 'contract_end_date',
+            'elevator_code', 'capacity_kg', 'capacity_person',
+            'responsible_person', 'responsible_phone', 'responsible_email',
+        ]));
+
+        if ($feeChanged) {
+            app(\App\Services\BuildingFinancialService::class)->syncMonthlyFeeChange($building);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Bina güncellendi.',
+            'data' => ['id' => $building->id, 'name' => $building->name],
+        ]);
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $user = $request->user();
+        $companyId = $user->company_id;
+        if (!$companyId) {
+            $employee = $user->employee ?? Employee::where('email', $user->email)->first();
+            $companyId = $employee?->company_id;
+        }
+        if (!$companyId) {
+            return response()->json(['success' => false, 'message' => 'Firma bilgisi bulunamadı'], 403);
+        }
+
+        $building = Building::where('company_id', $companyId)->findOrFail($id);
+        $building->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Bina silindi.',
+        ]);
+    }
+
     /**
      * 🏢 Get Building Detail
      */
@@ -405,6 +487,7 @@ class BuildingController extends Controller
                         return [
                             'id' => $issue->id,
                             'issue_type' => $issue->issue_type,
+                            'issue_type_label' => $issue->issue_type_label,
                             'priority' => $issue->priority,
                             'priority_label' => $issue->priority_label ?? ($issue->priority ?? null),
                             'description' => $issue->description,

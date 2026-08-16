@@ -6,6 +6,7 @@ use App\Models\Building;
 use App\Models\BuildingApprovalToken;
 use App\Models\BuildingContact;
 use App\Models\MaintenanceReport;
+use App\Models\NotificationPreference;
 use App\Models\SmsLog;
 use App\Services\Sms\SmsGatewayManager;
 use App\Support\PhoneNormalizer;
@@ -83,6 +84,10 @@ class MaintenanceApprovalService
         $pendingCount = $this->countPendingForBuilding($building->id);
         if ($pendingCount === 0) {
             return ['sent' => false, 'skipped_reason' => 'no_pending'];
+        }
+
+        if (!$force && !NotificationPreference::isEnabled($building->company_id, 'maintenance_completed', 'sms')) {
+            return ['sent' => false, 'skipped_reason' => 'sms_disabled_by_preference'];
         }
 
         $contact = $this->resolvePrimaryContact($building);

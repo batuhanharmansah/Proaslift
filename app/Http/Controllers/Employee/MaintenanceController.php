@@ -92,7 +92,13 @@ class MaintenanceController extends Controller
 
         // Rutin bakım için özel form göster
         if ($maintenance->maintenance_type === 'rutin_bakim') {
-            return view('employee.maintenance.create-routine-report', compact('maintenance', 'products'));
+            $customChecklistItems = \App\Models\CustomChecklistItem::where('company_id', auth()->user()->company_id)
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->get()
+                ->groupBy('section_id');
+
+            return view('employee.maintenance.create-routine-report', compact('maintenance', 'products', 'customChecklistItems'));
         }
 
         return view('employee.maintenance.create-report', compact('maintenance', 'products'));

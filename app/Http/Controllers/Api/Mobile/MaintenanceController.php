@@ -881,6 +881,37 @@ class MaintenanceController extends Controller
     }
 
     /**
+     * ✅ Firma özel bakım kontrol listesi maddeleri (rutin bakım checklist'ine eklenir)
+     */
+    public function checklistItems(Request $request)
+    {
+        try {
+            $companyId = $this->resolveMobileCompanyId($request);
+
+            if (!$companyId) {
+                return response()->json(['success' => false, 'message' => 'Firma bilgisi bulunamadı'], 403);
+            }
+
+            $items = \App\Models\CustomChecklistItem::where('company_id', $companyId)
+                ->where('is_active', true)
+                ->orderBy('section_id')
+                ->orderBy('sort_order')
+                ->get(['section_id', 'item_key', 'title']);
+
+            return response()->json([
+                'success' => true,
+                'data' => $items->groupBy('section_id')->map(fn($group) => $group->map(fn($i) => [
+                    'id' => $i->item_key,
+                    'title' => $i->title,
+                ])->values()),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Mobile checklist items error', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Kontrol listesi maddeleri yüklenemedi'], 500);
+        }
+    }
+
+    /**
      * 📝 Bakım raporu kaydet (Standard + Rutin)
      */
     public function storeReport(Request $request, $id)

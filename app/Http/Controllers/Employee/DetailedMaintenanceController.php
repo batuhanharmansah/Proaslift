@@ -37,14 +37,14 @@ class DetailedMaintenanceController extends Controller
     /**
      * Detaylı bakım formu göster
      */
-    public function show($scheduleId)
+    public function show(MaintenanceSchedule $maintenance)
     {
-        $schedule = MaintenanceSchedule::with(['building', 'assignedEmployee'])
-            ->where('assigned_employee_id', $this->getEmployeeId())
-            ->findOrFail($scheduleId);
+        abort_if($maintenance->assigned_employee_id !== $this->getEmployeeId(), 403);
+
+        $schedule = $maintenance->load(['building', 'assignedEmployee']);
 
         // Eğer zaten detaylı rapor varsa göster
-        $existingReport = DetailedMaintenanceReport::where('maintenance_schedule_id', $scheduleId)->first();
+        $existingReport = DetailedMaintenanceReport::where('maintenance_schedule_id', $schedule->id)->first();
 
         if ($existingReport) {
             return view('employee.maintenance.detailed-report', compact('schedule', 'existingReport'));
@@ -56,12 +56,14 @@ class DetailedMaintenanceController extends Controller
     /**
      * Detaylı bakım formunu kaydet
      */
-    public function store(Request $request, $scheduleId)
+    public function store(Request $request, MaintenanceSchedule $maintenance)
     {
         $employeeId = $this->getEmployeeId();
 
-        $schedule = MaintenanceSchedule::where('assigned_employee_id', $employeeId)
-            ->findOrFail($scheduleId);
+        abort_if($maintenance->assigned_employee_id !== $employeeId, 403);
+
+        $schedule = $maintenance;
+        $scheduleId = $schedule->id;
 
         $validated = $request->validate([
             'building_id_number' => 'nullable|string|max:255',
@@ -178,10 +180,12 @@ class DetailedMaintenanceController extends Controller
     /**
      * Detaylı bakım raporunu güncelle
      */
-    public function update(Request $request, $scheduleId)
+    public function update(Request $request, MaintenanceSchedule $maintenance)
     {
-        $schedule = MaintenanceSchedule::where('assigned_employee_id', $this->getEmployeeId())
-            ->findOrFail($scheduleId);
+        abort_if($maintenance->assigned_employee_id !== $this->getEmployeeId(), 403);
+
+        $schedule = $maintenance;
+        $scheduleId = $schedule->id;
 
         $report = DetailedMaintenanceReport::where('maintenance_schedule_id', $scheduleId)->firstOrFail();
 

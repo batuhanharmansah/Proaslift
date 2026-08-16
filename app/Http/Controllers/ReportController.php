@@ -47,8 +47,13 @@ class ReportController extends Controller
             ->where('status', 'aktif')
             ->count();
 
+        // Aktif personel sayısı
+        $totalEmployees = Employee::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->count();
+
         return view('reports.index', compact(
-            'monthlyIncome', 'monthlyExpense', 'completedMaintenance', 'activeBuildings'
+            'monthlyIncome', 'monthlyExpense', 'completedMaintenance', 'activeBuildings', 'totalEmployees'
         ));
     }
 

@@ -21,6 +21,7 @@ class Product extends Model
         'stock_quantity',
         'min_stock_level',
         'supplier',
+        'location',
         'is_active',
         'notes',
         'company_id'

@@ -60,6 +60,7 @@ class ProductController extends Controller
             'stock_quantity' => 'required|integer|min:0',
             'min_stock_level' => 'required|integer|min:0',
             'supplier' => 'nullable|string|max:255',
+            'location' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'notes' => 'nullable|string',
         ], [], ['code' => 'Ürün markası']);

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Arıza Bildirimi Düzenle #{{ $issueReport->id }} - Harmanşah Yazılım')
+@section('title', "Arıza Bildirimi Düzenle #{$issueReport->id} - Harmanşah Yazılım")
 
 @section('content')
 <div class="p-6">

@@ -20,7 +20,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <!-- Bu Ay -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-6">Bu Ay ({{ now()->format('F Y') }})</h2>
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Bu Ay ({{ now()->translatedFormat('F Y') }})</h2>
             <div class="space-y-4">
                 <div class="flex justify-between items-center p-4 bg-green-50 rounded-lg">
                     <div>
@@ -64,7 +64,7 @@
 
         <!-- Geçen Ay -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-6">Geçen Ay ({{ now()->subMonth()->format('F Y') }})</h2>
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Geçen Ay ({{ now()->subMonth()->translatedFormat('F Y') }})</h2>
             <div class="space-y-4">
                 <div class="flex justify-between items-center p-4 bg-green-50 rounded-lg">
                     <div>
@@ -197,6 +197,52 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
                     <p class="text-gray-500">Bu ay henüz işlem bulunmuyor</p>
+                </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Etiket Bazlı Analiz -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-2">Bu Ay Etiket Analizi</h2>
+            <p class="text-sm text-gray-500 mb-6">İşlem eklerken girilen serbest etiketlere göre kırılım (Yakıt, Kira, Malzeme vb.)</p>
+            <div class="space-y-4">
+                @php
+                    $incomeTags = $tagStats->where('transaction_type', 'gelir');
+                    $expenseTags = $tagStats->where('transaction_type', 'gider');
+                @endphp
+
+                @if($incomeTags->count() > 0)
+                <div>
+                    <h3 class="text-lg font-medium text-green-700 mb-3">Gelir Etiketleri</h3>
+                    <div class="space-y-2">
+                        @foreach($incomeTags as $tagRow)
+                        <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                            <span class="text-sm font-medium text-gray-700">{{ $tagRow->tag }}</span>
+                            <span class="text-sm font-bold text-green-600">₺{{ number_format($tagRow->total, 2) }}</span>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                @if($expenseTags->count() > 0)
+                <div>
+                    <h3 class="text-lg font-medium text-red-700 mb-3">Gider Etiketleri</h3>
+                    <div class="space-y-2">
+                        @foreach($expenseTags as $tagRow)
+                        <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                            <span class="text-sm font-medium text-gray-700">{{ $tagRow->tag }}</span>
+                            <span class="text-sm font-bold text-red-600">₺{{ number_format($tagRow->total, 2) }}</span>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                @if($tagStats->count() == 0)
+                <div class="text-center py-8">
+                    <p class="text-gray-500">Bu ay etiketli işlem bulunmuyor. Hızlı işlem eklerken "Etiket" alanını doldurarak kırılım oluşturabilirsiniz.</p>
                 </div>
                 @endif
             </div>

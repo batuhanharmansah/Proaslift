@@ -171,6 +171,7 @@ class NotificationController extends Controller
                 return response()->json([
                     'success' => true,
                     'data' => [
+                        'total' => 0,
                         'total_unread' => 0,
                         'by_type' => [],
                         'by_priority' => [],
@@ -178,23 +179,22 @@ class NotificationController extends Controller
                 ]);
             }
 
-            $count = Notification::where('user_id', $userId)
-                ->where('company_id', $companyId)
-                ->where('read', false)
-                ->count();
+            $scoped = Notification::where('user_id', $userId)
+                ->where('company_id', $companyId);
 
-            // Kategori bazlı sayılar
-            $countsByType = Notification::where('user_id', $userId)
-                ->where('company_id', $companyId)
+            $total = (clone $scoped)->count();
+            $count = (clone $scoped)->where('read', false)->count();
+            $count = min($count, $total);
+
+            // Kategori bazlı sayılar (aynı scope)
+            $countsByType = (clone $scoped)
                 ->where('read', false)
                 ->select('type', DB::raw('count(*) as count'))
                 ->groupBy('type')
                 ->pluck('count', 'type')
                 ->toArray();
 
-            // Öncelik bazlı sayılar
-            $countsByPriority = Notification::where('user_id', $userId)
-                ->where('company_id', $companyId)
+            $countsByPriority = (clone $scoped)
                 ->where('read', false)
                 ->select('priority', DB::raw('count(*) as count'))
                 ->groupBy('priority')
@@ -204,6 +204,7 @@ class NotificationController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => [
+                    'total' => $total,
                     'total_unread' => $count,
                     'by_type' => $countsByType,
                     'by_priority' => $countsByPriority,
@@ -220,6 +221,7 @@ class NotificationController extends Controller
                 return response()->json([
                     'success' => true,
                     'data' => [
+                        'total' => 0,
                         'total_unread' => 0,
                         'by_type' => [],
                         'by_priority' => [],
@@ -230,6 +232,10 @@ class NotificationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Okunmamış sayısı alınamadı',
+                'data' => [
+                    'total' => 0,
+                    'total_unread' => 0,
+                ],
             ], 500);
         }
     }

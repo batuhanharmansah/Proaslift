@@ -9,12 +9,15 @@ use App\Models\BuildingFinancialRecord;
 use App\Models\RecurringPayment;
 use App\Models\Receivable;
 use App\Models\ElevatorLabel;
+use App\Models\BuildingPortalAccount;
+use App\Support\PhoneNormalizer;
 use App\Services\GeocodingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
 class BuildingController extends Controller
@@ -67,6 +70,7 @@ class BuildingController extends Controller
             'elevator_type' => 'required|in:yolcu,yuk,hasta,karma',
             'contract_type' => 'required|in:bakim,onarim,modernizasyon',
             'monthly_fee' => 'required|numeric|min:0',
+            'fee_per_elevator' => 'nullable|numeric|min:0',
             'contract_start_date' => 'required|date',
             'contract_end_date' => 'required|date|after:contract_start_date',
             // Asansör özellikleri (isteğe bağlı)
@@ -115,7 +119,12 @@ class BuildingController extends Controller
                 }
             }
 
-            $building = Building::create(array_merge($request->all(), [
+            $data = $request->all();
+            if ($request->filled('fee_per_elevator')) {
+                $data['monthly_fee'] = (float) $request->fee_per_elevator * max(1, (int) $request->elevator_count);
+            }
+
+            $building = Building::create(array_merge($data, [
                 'company_id' => $companyId,
                 'operational_status' => 'aktif'
             ]));
@@ -325,7 +334,14 @@ class BuildingController extends Controller
     {
         abort_if($building->company_id !== auth()->user()->company_id, 403);
 
-        return view('buildings.edit', compact('building'));
+        $employees = \App\Models\Employee::where('company_id', auth()->user()->company_id)
+            ->where('is_active', true)
+            ->orderBy('first_name')
+            ->get();
+
+        $portalAccount = BuildingPortalAccount::where('building_id', $building->id)->first();
+
+        return view('buildings.edit', compact('building', 'employees', 'portalAccount'));
     }
 
     public function update(Request $request, Building $building)
@@ -342,12 +358,19 @@ class BuildingController extends Controller
             'elevator_type' => 'required|in:yolcu,yuk,hasta,karma',
             'contract_type' => 'required|in:bakim,onarim,modernizasyon',
             'monthly_fee' => 'required|numeric|min:0',
+            'fee_per_elevator' => 'nullable|numeric|min:0',
             'contract_start_date' => 'required|date',
             'contract_end_date' => 'required|date|after:contract_start_date',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        if ($request->filled('fee_per_elevator')) {
+            $request->merge([
+                'monthly_fee' => (float) $request->fee_per_elevator * max(1, (int) $request->elevator_count),
+            ]);
         }
 
         // COST-OPTIMIZED: Geocoding ONLY if:
@@ -407,5 +430,40 @@ class BuildingController extends Controller
         $this->clearBuildingCache();
 
         return redirect()->route('buildings.index')->with('success', 'Bina silindi.');
+    }
+
+    /**
+     * Müşteri Portalı erişimi oluştur/güncelle (Özellik #6).
+     */
+    public function enablePortal(Request $request, Building $building)
+    {
+        abort_if($building->company_id !== auth()->user()->company_id, 403);
+
+        $validated = $request->validate([
+            'portal_phone' => 'required|string',
+            'portal_password' => 'required|string|min:8',
+        ]);
+
+        $phone = PhoneNormalizer::normalize($validated['portal_phone']);
+
+        BuildingPortalAccount::updateOrCreate(
+            ['building_id' => $building->id],
+            [
+                'phone' => $phone,
+                'password' => Hash::make($validated['portal_password']),
+                'is_active' => true,
+            ]
+        );
+
+        return back()->with('success', 'Müşteri portalı erişimi oluşturuldu/güncellendi.');
+    }
+
+    public function disablePortal(Building $building)
+    {
+        abort_if($building->company_id !== auth()->user()->company_id, 403);
+
+        BuildingPortalAccount::where('building_id', $building->id)->delete();
+
+        return back()->with('success', 'Müşteri portalı erişimi kaldırıldı.');
     }
 }
