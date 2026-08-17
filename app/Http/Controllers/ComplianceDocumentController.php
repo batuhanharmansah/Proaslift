@@ -25,12 +25,18 @@ class ComplianceDocumentController extends Controller
 
         $buildings = Building::where('company_id', $companyId)->orderBy('name')->get(['id', 'name']);
 
-        return view('compliance-documents.index', [
+        $viewData = [
             'documents' => $documents,
             'buildings' => $buildings,
             'type' => $type,
             'typeLabel' => ComplianceDocument::TYPES[$type],
-        ]);
+        ];
+
+        if (auth()->user()->hasRole('employee')) {
+            return view('employee.compliance-documents.index', $viewData);
+        }
+
+        return view('compliance-documents.index', $viewData);
     }
 
     public function store(Request $request, string $type)

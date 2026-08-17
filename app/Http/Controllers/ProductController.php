@@ -40,6 +40,10 @@ class ProductController extends Controller
 
         $products = $query->orderBy('created_at', 'desc')->paginate(10);
 
+        if (auth()->user()->hasRole('employee')) {
+            return view('employee.products.index', compact('products'));
+        }
+
         return view('products.index', compact('products'));
     }
 
@@ -81,6 +85,10 @@ class ProductController extends Controller
             abort(404, 'Ürün bulunamadı.');
         }
         abort_if($product->company_id !== auth()->user()->company_id, 403);
+
+        if (auth()->user()->hasRole('employee')) {
+            return view('employee.products.show', compact('product'));
+        }
 
         return view('products.show', compact('product'));
     }

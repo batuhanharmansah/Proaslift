@@ -6,34 +6,49 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
+@php
+    $isEmployee = auth()->user()->hasRole('employee');
+    $buildingsRoute = $isEmployee ? route('employee.route-planner.buildings') : route('maintenance.route-planner.buildings');
+    $backRoute = $isEmployee ? route('employee.maintenance.index') : route('maintenance.index');
+@endphp
+
 <div class="p-6">
     <div class="flex justify-between items-center mb-6">
         <div>
             <h1 class="text-3xl font-bold text-gray-900">Bina Rota Planlayıcı</h1>
             <p class="text-gray-600 mt-1">Haritada binaları görün, en yakınları seçin, akıllı sıralayın ve Google Maps'te yol tarifini açın.</p>
         </div>
-        <a href="{{ route('maintenance.index') }}" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-xl transition duration-200">
+        <a href="{{ $backRoute }}" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-xl transition duration-200">
             Bakım Listesine Dön
         </a>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4 flex flex-wrap gap-3 items-center">
         <select id="filter-select" class="rounded-lg border-gray-300 text-sm">
-            <option value="all">Tüm Binalar</option>
-            <option value="assigned_to_me">Bana Atanmış</option>
-            <option value="overdue">Vade Geçen</option>
-            <option value="employee">Teknisyene Göre</option>
+            @if($isEmployee)
+                <option value="assigned_to_me">Bana Atanmış</option>
+                <option value="all">Tüm Binalar</option>
+                <option value="overdue">Vade Geçen</option>
+            @else
+                <option value="all">Tüm Binalar</option>
+                <option value="assigned_to_me">Bana Atanmış</option>
+                <option value="overdue">Vade Geçen</option>
+                <option value="employee">Teknisyene Göre</option>
+            @endif
         </select>
+        @unless($isEmployee)
         <select id="employee-select" class="rounded-lg border-gray-300 text-sm hidden">
             <option value="">— Teknisyen Seçin —</option>
             @foreach($employees as $emp)
                 <option value="{{ $emp->id }}">{{ $emp->first_name }} {{ $emp->last_name }}</option>
             @endforeach
         </select>
+        @endunless
         <button id="btn-load" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900">Yükle</button>
 
         <span class="border-l border-gray-200 h-6 mx-2"></span>
 
+        <button id="btn-my-location" class="bg-white border border-blue-300 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50">📍 Kendi Konumumu Kullan</button>
         <button id="btn-nearest-5" class="bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">En Yakın 5</button>
         <button id="btn-nearest-10" class="bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">En Yakın 10</button>
         <button id="btn-clear" class="bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">Seçimi Temizle</button>
@@ -42,6 +57,7 @@
 
         <span id="selection-count" class="text-sm text-gray-500 ml-auto">0 bina · 0 seçili</span>
     </div>
+    <p class="text-xs text-gray-400 -mt-2 mb-4">İpucu: Başlangıç noktası olarak haritaya tıklayabilir veya "Kendi Konumumu Kullan" ile telefonunuzun/tarayıcınızın GPS konumunu kullanabilirsiniz.</p>
 
     <div id="map" class="rounded-xl border border-gray-200" style="height: 600px;"></div>
 
@@ -132,11 +148,12 @@
 
     async function loadBuildings() {
         const filter = document.getElementById('filter-select').value;
-        const employeeId = document.getElementById('employee-select').value;
+        const employeeSelect = document.getElementById('employee-select');
+        const employeeId = employeeSelect ? employeeSelect.value : '';
         const params = new URLSearchParams({ filter });
         if (filter === 'employee' && employeeId) params.set('employee_id', employeeId);
 
-        const res = await fetch(`{{ route('maintenance.route-planner.buildings') }}?${params}`);
+        const res = await fetch(`{{ $buildingsRoute }}?${params}`);
         const json = await res.json();
         buildings = json.data || [];
         selectedIds = [];
@@ -151,10 +168,36 @@
     }
 
     document.getElementById('filter-select').addEventListener('change', function () {
-        document.getElementById('employee-select').classList.toggle('hidden', this.value !== 'employee');
+        const employeeSelect = document.getElementById('employee-select');
+        if (employeeSelect) employeeSelect.classList.toggle('hidden', this.value !== 'employee');
     });
 
     document.getElementById('btn-load').addEventListener('click', loadBuildings);
+
+    document.getElementById('btn-my-location').addEventListener('click', function () {
+        if (!navigator.geolocation) {
+            alert('Tarayıcınız konum özelliğini desteklemiyor.');
+            return;
+        }
+        const btn = this;
+        btn.disabled = true;
+        btn.textContent = '📍 Konum alınıyor...';
+        navigator.geolocation.getCurrentPosition(
+            function (position) {
+                startPoint = { lat: position.coords.latitude, lng: position.coords.longitude };
+                map.setView([startPoint.lat, startPoint.lng], 13);
+                renderMarkers();
+                btn.disabled = false;
+                btn.textContent = '📍 Kendi Konumumu Kullan';
+            },
+            function () {
+                alert('Konumunuz alınamadı. Lütfen tarayıcı konum izinlerini kontrol edin veya haritaya tıklayarak başlangıç noktası seçin.');
+                btn.disabled = false;
+                btn.textContent = '📍 Kendi Konumumu Kullan';
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    });
 
     document.getElementById('btn-clear').addEventListener('click', function () {
         selectedIds = [];

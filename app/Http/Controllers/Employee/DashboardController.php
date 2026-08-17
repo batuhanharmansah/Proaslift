@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Models\MaintenanceSchedule;
 use App\Models\MaintenanceReport;
-use App\Models\Product;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -78,12 +77,18 @@ class DashboardController extends Controller
                 ->value('avg_minutes') ?? 0,
         ];
 
-        // Son kullandığım ürünler
-        $recentProducts = Product::where('company_id', $user->company_id)
-            ->where('is_active', true)
-            ->orderBy('updated_at', 'desc')
-            ->take(8)
-            ->get();
+        // Son kullandığım ürünler (kendi bakım raporlarımda kullandığım parçalar)
+        $recentProducts = MaintenanceReport::where('employee_id', $employeeId)
+            ->whereNotNull('used_products')
+            ->orderBy('created_at', 'desc')
+            ->take(15)
+            ->get()
+            ->flatMap(function ($report) {
+                return collect($report->used_products ?? [])->map(function ($item) use ($report) {
+                    return (object) array_merge($item, ['used_at' => $report->created_at]);
+                });
+            })
+            ->take(8);
 
         // Bu ay tamamladığım işlerin grafiği
         $monthlyData = [];

@@ -66,6 +66,10 @@ class ElevatorLabelController extends Controller
         // İstatistikler
         $stats = $this->getStats();
 
+        if (auth()->user()->hasRole('employee')) {
+            return view('employee.elevator-labels.index', compact('buildings', 'stats'));
+        }
+
         return view('elevator-labels.index', compact('buildings', 'stats'));
     }
 
@@ -85,6 +89,10 @@ class ElevatorLabelController extends Controller
         $buildings = Building::where('company_id', auth()->user()->company_id)
                            ->orderBy('name')
                            ->get();
+
+        if (auth()->user()->hasRole('employee')) {
+            return view('employee.elevator-labels.create', compact('building', 'buildings'));
+        }
 
         return view('elevator-labels.create', compact('building', 'buildings'));
     }
@@ -132,7 +140,9 @@ class ElevatorLabelController extends Controller
         // Audit log
         AuditLog::logModelChange($label, 'created', 'Yeni etiket oluşturuldu', auth()->id());
 
-        return redirect()->route('elevator-labels.show', $label)
+        $routeName = auth()->user()->hasRole('employee') ? 'employee.elevator-labels.show' : 'elevator-labels.show';
+
+        return redirect()->route($routeName, $label)
                         ->with('success', 'Etiket başarıyla oluşturuldu.');
     }
 
@@ -164,6 +174,10 @@ class ElevatorLabelController extends Controller
                                    ->orderBy('control_date', 'desc')
                                    ->limit(5)
                                    ->get();
+
+        if (auth()->user()->hasRole('employee')) {
+            return view('employee.elevator-labels.show', compact('elevatorLabel', 'labelHistory'));
+        }
 
         return view('elevator-labels.show', compact('elevatorLabel', 'labelHistory'));
     }

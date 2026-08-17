@@ -17,6 +17,7 @@ use App\Http\Controllers\SuperAdmin\PaymentController as SuperAdminPaymentContro
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\MaintenanceController as EmployeeMaintenanceController;
 use App\Http\Controllers\Employee\DetailedMaintenanceController;
+use App\Http\Controllers\Employee\IssueReportController as EmployeeIssueReportController;
 use App\Http\Controllers\ElevatorLabelController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MaintenanceApprovalController;
@@ -156,6 +157,36 @@ Route::middleware(['auth', 'role:employee', 'company.active'])->prefix('employee
     // Kendi profilim (maaş/pozisyon dahil değil)
     Route::get('/profile', [EmployeeController::class, 'selfProfile'])->name('profile');
     Route::patch('/profile', [EmployeeController::class, 'updateSelfProfile'])->name('profile.update');
+
+    // Rota Planlayıcı (sahada teknisyenin kendi günlük rotasını planlaması için)
+    Route::prefix('rota-planlayici')->name('route-planner.')->group(function () {
+        Route::get('/', [RoutePlannerController::class, 'index'])->name('index');
+        Route::get('/binalar', [RoutePlannerController::class, 'buildings'])->name('buildings');
+    });
+
+    // Arıza bildirimlerim (bana atanmış)
+    Route::get('/ariza-bildirimlerim', [EmployeeIssueReportController::class, 'index'])->name('issue-reports.index');
+    Route::get('/ariza-bildirimlerim/{issueReport}', [EmployeeIssueReportController::class, 'show'])->name('issue-reports.show');
+    Route::post('/ariza-bildirimlerim/{issueReport}/start-work', [EmployeeIssueReportController::class, 'startWork'])->name('issue-reports.start-work');
+    Route::post('/ariza-bildirimlerim/{issueReport}/complete', [EmployeeIssueReportController::class, 'complete'])->name('issue-reports.complete');
+
+    // Depo (salt-okunur — sahada stok kontrolü için)
+    Route::get('/depo', [ProductController::class, 'index'])->name('products.index');
+    Route::get('/depo/{product}', [ProductController::class, 'show'])->name('products.show');
+
+    // DTR / Kurtarma Formu (sahadaki durumu belgeleyen formlar — teknisyen doldurabilir)
+    Route::prefix('belgeler/{type}')->name('compliance-documents.')->group(function () {
+        Route::get('/', [ComplianceDocumentController::class, 'index'])->name('index');
+        Route::post('/', [ComplianceDocumentController::class, 'store'])->name('store');
+    });
+
+    // Etiket Takibi (asansör muayene etiketi — sahada güncellenebilir)
+    Route::prefix('elevator-labels')->name('elevator-labels.')->group(function () {
+        Route::get('/', [ElevatorLabelController::class, 'index'])->name('index');
+        Route::get('/create', [ElevatorLabelController::class, 'create'])->name('create');
+        Route::post('/', [ElevatorLabelController::class, 'store'])->name('store');
+        Route::get('/{elevatorLabel}', [ElevatorLabelController::class, 'show'])->name('show');
+    });
 });
 
 // COMPANY ROUTES (Asansör firması)
