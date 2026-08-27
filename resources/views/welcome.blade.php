@@ -825,8 +825,12 @@
     <header class="header">
         <div class="container">
             <nav class="nav">
+                @php
+                    $brandLogo = asset('brand/proaslift-logo.png');
+                    $brandLogoFallback = asset('public/brand/proaslift-logo.png');
+                @endphp
                 <a href="#" class="logo">
-                    <img src="{{ asset('brand/proaslift-logo.png') }}" alt="ProAsLift">
+                    <img src="{{ $brandLogo }}" onerror="this.onerror=null;this.src='{{ $brandLogoFallback }}';" alt="ProAsLift">
                     ProAsLift
                 </a>
                 <ul class="nav-links">
